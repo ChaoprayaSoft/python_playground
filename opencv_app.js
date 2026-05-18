@@ -220,16 +220,32 @@ async function init() {
         appendOutput("Loading OpenCV WebAssembly library (this may take a few seconds)...\n");
         await pyodideInstance.loadPackage("opencv-python");
         
-        // Fetch and write physical logo.png to Pyodide virtual filesystem
+        // Create 'image' folder inside Pyodide's virtual filesystem
         try {
-            appendOutput("Fetching course image assets (image/logo.png)...\n");
-            const imgResponse = await fetch('image/logo.png');
-            const arrayBuffer = await imgResponse.arrayBuffer();
-            pyodideInstance.FS.writeFile('logo.png', new Uint8Array(arrayBuffer));
-            appendOutput("Image assets loaded successfully!\n");
-        } catch (e) {
-            console.warn("Could not pre-load physical logo.png into Pyodide FS:", e);
+            pyodideInstance.FS.mkdir('image');
+        } catch(e) {
+            console.warn("Folder 'image' already exists or could not be created:", e);
         }
+
+        // Fetch and write physical course images to Pyodide virtual filesystem
+        const courseImages = ["logo.png", "duck.jpg"];
+        for (const imgName of courseImages) {
+            try {
+                appendOutput(`Preloading course image asset (${imgName})...\n`);
+                const imgResponse = await fetch(`image/${imgName}`);
+                if (imgResponse.ok) {
+                    const arrayBuffer = await imgResponse.arrayBuffer();
+                    const uint8Arr = new Uint8Array(arrayBuffer);
+                    
+                    // Write to both root and image/ folder so both paths resolve!
+                    pyodideInstance.FS.writeFile(imgName, uint8Arr);
+                    pyodideInstance.FS.writeFile(`image/${imgName}`, uint8Arr);
+                }
+            } catch (e) {
+                console.warn(`Could not preload image asset ${imgName} into Pyodide FS:`, e);
+            }
+        }
+        appendOutput("Image assets loaded successfully!\n");
         
         // Inject synthetic OpenCV environment overrides
         await pyodideInstance.runPythonAsync(`
@@ -269,17 +285,9 @@ try:
     # 2. Custom live-canvas preview bridge
     def patch_imshow(winname, mat):
         try:
-            if len(mat.shape) == 3:
-                if mat.shape[2] == 3:
-                    mat_rgb = cv2.cvtColor(mat, cv2.COLOR_BGR2RGB)
-                elif mat.shape[2] == 4:
-                    mat_rgb = cv2.cvtColor(mat, cv2.COLOR_BGRA2RGBA)
-                else:
-                    mat_rgb = mat
-            else:
-                mat_rgb = mat
-                
-            success, encoded_img = cv2.imencode('.png', mat_rgb)
+            # cv2.imencode natively expects standard OpenCV BGR color space!
+            # Passing BGR to imencode produces correct RGB PNG bytes for browser canvas rendering.
+            success, encoded_img = cv2.imencode('.png', mat)
             if success:
                 arr = Uint8Array.new(encoded_img.tobytes())
                 blob = Blob.new([arr], type="image/png")
