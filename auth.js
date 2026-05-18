@@ -7,7 +7,7 @@
 const GOOGLE_SHEETS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbywkBFnCaI9mXEeh833XTeD8lnqO6rn2Zw9_d9hxvF_nBmVGhy9CM4K-ZMESq7PCZLF/exec";
 
 // 2. Paste your Google OAuth Client ID here:
-const GOOGLE_OAUTH_CLIENT_ID = "1049203742621-85p09ruvq6kr2m1bnu1kg933ajhbjen3.apps.googleusercontent.com";
+const GOOGLE_OAUTH_CLIENT_ID = "1049203742621-tce9mr7k2qne7a7b1jn6b6mujlj9fcpu.apps.googleusercontent.com";
 // ==========================================
 
 const DEFAULT_AVATARS = ["🐱", "🐶", "🦊", "🦁", "🐯", "🐼", "🐨", "🐸", "🐙", "🦄"];
