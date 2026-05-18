@@ -90,7 +90,7 @@ const PyPlayAuth = {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                 },
                 body: JSON.stringify({
                     type: 'user',
@@ -116,7 +116,7 @@ const PyPlayAuth = {
                 method: 'POST',
                 mode: 'no-cors',
                 headers: {
-                    'Content-Type': 'application/json',
+                    'Content-Type': 'text/plain',
                 },
                 body: JSON.stringify({
                     type: 'log',
