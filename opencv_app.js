@@ -227,11 +227,34 @@ async function init() {
             console.warn("Folder 'image' already exists or could not be created:", e);
         }
 
-        // Fetch and write physical course images to Pyodide virtual filesystem
-        const courseImages = ["logo.png", "duck.jpg"];
+        // Fetch and write physical course images dynamically to Pyodide virtual filesystem
+        let courseImages = ["logo.png", "duck.jpg"];
+        try {
+            appendOutput("Scanning 'image' folder for course assets...\n");
+            const listResponse = await fetch('image/');
+            if (listResponse.ok) {
+                const htmlText = await listResponse.text();
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(htmlText, 'text/html');
+                const links = Array.from(doc.querySelectorAll('a'))
+                    .map(a => a.getAttribute('href'))
+                    .map(href => {
+                        try { return decodeURIComponent(href); } catch(e) { return href; }
+                    })
+                    .filter(href => href && /\.(png|jpg|jpeg|bmp)$/i.test(href))
+                    .map(href => href.substring(href.lastIndexOf('/') + 1));
+                
+                if (links.length > 0) {
+                    courseImages = [...new Set(links)];
+                }
+            }
+        } catch (e) {
+            console.warn("Could not dynamically parse image/ directory index, using standard fallbacks:", e);
+        }
+
         for (const imgName of courseImages) {
             try {
-                appendOutput(`Preloading course image asset (${imgName})...\n`);
+                appendOutput(`Preloading course image: ${imgName}...\n`);
                 const imgResponse = await fetch(`image/${imgName}`);
                 if (imgResponse.ok) {
                     const arrayBuffer = await imgResponse.arrayBuffer();
@@ -245,7 +268,7 @@ async function init() {
                 console.warn(`Could not preload image asset ${imgName} into Pyodide FS:`, e);
             }
         }
-        appendOutput("Image assets loaded successfully!\n");
+        appendOutput("All dynamic image assets loaded successfully!\n");
         
         // Inject synthetic OpenCV environment overrides
         await pyodideInstance.runPythonAsync(`
@@ -285,9 +308,17 @@ try:
     # 2. Custom live-canvas preview bridge
     def patch_imshow(winname, mat):
         try:
-            # cv2.imencode natively expects standard OpenCV BGR color space!
-            # Passing BGR to imencode produces correct RGB PNG bytes for browser canvas rendering.
-            success, encoded_img = cv2.imencode('.png', mat)
+            if len(mat.shape) == 3:
+                if mat.shape[2] == 3:
+                    mat_rgb = cv2.cvtColor(mat, cv2.COLOR_BGR2RGB)
+                elif mat.shape[2] == 4:
+                    mat_rgb = cv2.cvtColor(mat, cv2.COLOR_BGRA2RGBA)
+                else:
+                    mat_rgb = mat
+            else:
+                mat_rgb = mat
+                
+            success, encoded_img = cv2.imencode('.png', mat_rgb)
             if success:
                 arr = Uint8Array.new(encoded_img.tobytes())
                 blob = Blob.new([arr], type="image/png")
