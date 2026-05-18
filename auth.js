@@ -311,7 +311,7 @@ const PyPlayAuth = {
             <div class="glass-panel" style="width: 400px; padding: 2.5rem; display:flex; flex-direction:column; gap:1.75rem; text-align:center;">
                 <div style="font-size:3rem;">🐍</div>
                 <div>
-                    <h3 style="font-size:1.75rem; font-weight:700;">Join PyPlay</h3>
+                    <h3 style="font-size:1.75rem; font-weight:700;">Sign In with Gmail</h3>
                     <p style="font-size:0.875rem; color:var(--text-muted); margin-top:0.25rem;">Start saving your coding progress</p>
                 </div>
                 
@@ -321,12 +321,20 @@ const PyPlayAuth = {
                         <input type="text" id="login-name-input" placeholder="e.g. John Doe" style="background:rgba(0,0,0,0.3); border:1px solid var(--panel-border); color:white; border-radius:8px; padding:0.75rem; font-family:var(--font-ui); font-size:0.9rem; outline:none;">
                     </div>
                     <div style="display:flex; flex-direction:column; gap:0.35rem;">
-                        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">Google Email</label>
+                        <label style="font-size:0.75rem; font-weight:600; color:var(--text-muted);">Gmail Address</label>
                         <input type="email" id="login-email-input" placeholder="e.g. john@gmail.com" style="background:rgba(0,0,0,0.3); border:1px solid var(--panel-border); color:white; border-radius:8px; padding:0.75rem; font-family:var(--font-ui); font-size:0.9rem; outline:none;">
                     </div>
                 </div>
 
-                <button class="btn btn-primary" onclick="PyPlayAuth.handleEmailLogin()" style="justify-content:center; width:100%; padding:0.75rem; font-size:1rem; border-radius:8px;">Sign In with Email</button>
+                <button class="btn" onclick="PyPlayAuth.handleEmailLogin()" style="justify-content:center; width:100%; padding:0.75rem; font-size:0.95rem; border-radius:8px; display:flex; align-items:center; gap:0.75rem; background:#ffffff; color:#1f2937; border:1px solid #e5e7eb; font-weight:700; cursor:pointer;">
+                    <svg width="18" height="18" viewBox="0 0 24 24" style="display:block;">
+                        <path fill="#4285F4" d="M23.745 12.27c0-.7-.06-1.4-.19-2.07H12v3.92h6.69c-.29 1.5-1.14 2.77-2.43 3.63v3.02h3.92c2.29-2.11 3.56-5.22 3.56-8.9z"/>
+                        <path fill="#34A853" d="M12 24c3.24 0 5.95-1.08 7.93-2.91l-3.92-3.04c-1.08.72-2.48 1.16-4.01 1.16-3.09 0-5.72-2.08-6.66-4.88H1.31v3.14C3.29 22.39 7.37 24 12 24z"/>
+                        <path fill="#FBBC05" d="M5.34 14.33c-.24-.72-.38-1.49-.38-2.33s.14-1.61.38-2.33V6.53H1.31C.48 8.18 0 10.03 0 12s.48 3.82 1.31 5.47l4.03-3.14z"/>
+                        <path fill="#EA4335" d="M12 4.75c1.77 0 3.35.61 4.6 1.8l3.43-3.43C17.95 1.19 15.24 0 12 0 7.37 0 3.29 1.61 1.31 4.75l4.03 3.14c.94-2.8 3.57-4.88 6.66-4.88z"/>
+                    </svg>
+                    Sign In with Gmail
+                </button>
                 
                 <div style="border-top:1px solid var(--panel-border); padding-top:1.25rem; display:flex; flex-direction:column; gap:0.75rem;">
                     <span style="font-size:0.75rem; color:var(--text-muted);">Want to instantly test the app?</span>
@@ -362,8 +370,8 @@ const PyPlayAuth = {
             alert("Please provide both name and email.");
             return;
         }
-        if (!email.includes('@')) {
-            alert("Please enter a valid Google Email.");
+        if (!email.toLowerCase().endsWith('@gmail.com') && !email.toLowerCase().endsWith('@googlemail.com')) {
+            alert("Please enter a valid @gmail.com address.");
             return;
         }
         this.login(email, name);
