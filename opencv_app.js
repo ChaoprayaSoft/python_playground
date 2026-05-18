@@ -4,10 +4,10 @@ const lessons = [
         title: "Getting Started With Images",
         difficulty: "Intermediate",
         topic: "OpenCV Basics",
-        concept: "In OpenCV, images are loaded using the <code>cv2.imread()</code> function. Loaded images are represented as standard multi-dimensional NumPy arrays (<code>numpy.ndarray</code>). You can check the shape/dimensions of an image using the <code>.shape</code> attribute, which returns a tuple of <code>(height, width, channels)</code> for color images, or <code>(height, width)</code> for grayscale images.",
-        example: 'import cv2\n# Load an image (mock representation)\nimg_shape = (1080, 1920, 3)\nprint(img_shape)',
+        concept: "In OpenCV, images are loaded using the <code>cv2.imread()</code> function. Loaded images are represented as standard multi-dimensional NumPy arrays (<code>numpy.ndarray</code>). You can check the shape/dimensions of an image using the <code>.shape</code> attribute, which returns a tuple of <code>(height, width, channels)</code> for color images, or <code>(height, width)</code> for grayscale images. In this sandbox, <code>cv2.imshow()</code> renders the image live in the Live Preview tab!",
+        example: 'import cv2\n# Load and display sample image\nimg = cv2.imread("logo.png")\nprint(img.shape)\ncv2.imshow("Logo Image", img)',
         task: 'Write a Python script that prints the shape of a loaded RGB image with a height of 1080 pixels and a width of 1920 pixels in the exact format: `(1080, 1920, 3)`',
-        initialCode: '# Print the exact tuple shape below:\n',
+        initialCode: 'import cv2\n# Write code to print the exact shape of an image (1080, 1920, 3):\n',
         expectedOutput: "(1080, 1920, 3)"
     },
     {
@@ -216,9 +216,68 @@ async function init() {
             stdout: (text) => appendOutput(text + "\n"),
             stderr: (text) => appendError(text + "\n")
         });
+        
+        appendOutput("Loading OpenCV WebAssembly library (this may take a few seconds)...\n");
+        await pyodideInstance.loadPackage("opencv-python");
+        
+        // Inject synthetic OpenCV environment overrides
+        await pyodideInstance.runPythonAsync(`
+import sys
+import types
+
+try:
+    import cv2
+    import numpy as np
+    from js import Uint8Array, Blob, URL
+    
+    # 1. Custom mock image loader returning standard shape/colored gradients
+    def patch_imread(filename, flags=1):
+        img = np.zeros((400, 400, 3), dtype=np.uint8)
+        for y in range(400):
+            for x in range(400):
+                img[y, x] = [
+                    int((x / 400.0) * 255),  # B
+                    int((y / 400.0) * 255),  # G
+                    150                      # R
+                ]
+        # Overlays
+        cv2.circle(img, (200, 200), 80, (255, 255, 255), -1)
+        cv2.putText(img, "PyPlay Live", (110, 210), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (0, 0, 0), 2)
+        return img
+        
+    # 2. Custom live-canvas preview bridge
+    def patch_imshow(winname, mat):
+        try:
+            if len(mat.shape) == 3:
+                if mat.shape[2] == 3:
+                    mat_rgb = cv2.cvtColor(mat, cv2.COLOR_BGR2RGB)
+                elif mat.shape[2] == 4:
+                    mat_rgb = cv2.cvtColor(mat, cv2.COLOR_BGRA2RGBA)
+                else:
+                    mat_rgb = mat
+            else:
+                mat_rgb = mat
+                
+            success, encoded_img = cv2.imencode('.png', mat_rgb)
+            if success:
+                arr = Uint8Array.new(encoded_img.tobytes())
+                blob = Blob.new([arr], type="image/png")
+                url = URL.createObjectURL(blob)
+                
+                from js import updateCanvasPreview
+                updateCanvasPreview(url)
+        except Exception as e:
+            print("Error in cv2.imshow: " + str(e))
+            
+    cv2.imread = patch_imread
+    cv2.imshow = patch_imshow
+except Exception as e:
+    print("Error initializing OpenCV sandbox: " + str(e))
+        `);
+        
         pyodideReady = true;
         
-        dom.outputConsole.textContent = "Python Engine Ready! 🐍\n\n";
+        dom.outputConsole.textContent = "Python & OpenCV Engine Ready! 📸🐍\n\nYou can write real Python code using 'import cv2' and preview your modifications live with cv2.imshow('Title', image)!\n\n";
         dom.runBtn.disabled = false;
     } catch (err) {
         dom.outputConsole.innerHTML = `<span class="terminal-error">Failed to load Python Engine. Please check your internet connection.</span>`;
@@ -227,6 +286,46 @@ async function init() {
     
     setupEventListeners();
 }
+
+// --- Live Preview Helper Functions ---
+window.switchOutputTab = function(tabName) {
+    const tabConsole = document.getElementById('tab-console');
+    const tabPreview = document.getElementById('tab-preview');
+    const consoleContainer = document.getElementById('console-container');
+    const previewContainer = document.getElementById('preview-container');
+    
+    if (tabName === 'console') {
+        tabConsole.classList.add('active');
+        tabPreview.classList.remove('active');
+        consoleContainer.classList.remove('hidden');
+        previewContainer.classList.add('hidden');
+    } else {
+        tabConsole.classList.remove('active');
+        tabPreview.classList.add('active');
+        consoleContainer.classList.add('hidden');
+        previewContainer.classList.remove('hidden');
+    }
+};
+
+window.updateCanvasPreview = function(url) {
+    // Switch to preview tab automatically so user sees the image
+    switchOutputTab('preview');
+    
+    const canvas = document.getElementById('preview-canvas');
+    const ctx = canvas.getContext('2d');
+    const placeholder = document.getElementById('no-preview-placeholder');
+    
+    const img = new Image();
+    img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.style.display = 'block';
+        placeholder.style.display = 'none';
+    };
+    img.src = url;
+};
 
 // --- Functions ---
 function loadLesson(index) {
