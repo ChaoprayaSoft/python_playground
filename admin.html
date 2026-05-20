@@ -118,15 +118,16 @@
 <body>
     <div class="app-container">
         <!-- Header -->
-        <header class="glass-panel header">
+        <header class="glass-panel header" id="admin-app-header">
             <div style="display: flex; align-items: center; gap: 1.5rem;">
                 <a href="index.html" class="logo">
                     <div class="logo-icon">🐍</div>
                     <h1>PyPlay</h1>
                 </a>
                 <a href="index.html" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">🏠 Home</a>
+                <span style="font-size:0.8rem; font-weight:700; background:rgba(239,68,68,0.15); color:#fca5a5; border:1px solid rgba(239,68,68,0.3); padding:0.2rem 0.6rem; border-radius:99px;">🛡️ Admin Panel</span>
             </div>
-            <div class="controls"></div>
+            <div id="admin-header-auth" style="display:flex; align-items:center; gap:1rem;"></div>
         </header>
 
         <!-- Main Workspace: Admin Layout -->
@@ -403,6 +404,24 @@
                 return;
             }
 
+            // Explicitly inject auth controls into the admin header's dedicated slot
+            (function renderAdminHeaderAuth() {
+                const slot = document.getElementById('admin-header-auth');
+                if (!slot || !PyPlayAuth.user) return;
+                const u = PyPlayAuth.user;
+                document.documentElement.style.setProperty('--accent-primary', u.color);
+                slot.innerHTML = `
+                    <div class="user-status-widget" onclick="window.location.href='dashboard.html'" style="cursor:pointer; display:flex; align-items:center; gap:0.5rem; background: rgba(255,255,255,0.05); padding: 0.5rem 1rem; border-radius: 99px;">
+                        <span style="font-size: 1.5rem; cursor:pointer;" title="Click to edit nickname" onclick="event.stopPropagation(); PyPlayAuth.editNicknamePrompt();">${u.avatar}</span>
+                        <span style="font-weight:600; font-size:0.9rem;">${u.name}</span>
+                        <span style="font-size: 0.7rem; background:rgba(239, 68, 68, 0.2); color:#fca5a5; padding:0.2rem 0.5rem; border-radius:4px;">Admin</span>
+                    </div>
+                    <a href="dashboard.html" class="btn btn-outline" style="border-color: rgba(59, 130, 246, 0.4); color: #93c5fd;">📊 Dashboard</a>
+                    <button class="btn btn-outline" onclick="PyPlayAuth.openSettingsModal()" style="border-color: rgba(255,255,255,0.2); color: #fff;">⚙️ Settings</button>
+                    <button class="btn btn-outline" onclick="PyPlayAuth.logout()">Log Out</button>
+                `;
+            })();
+
             let usersList = [];
             let logsList = [];
 
@@ -446,22 +465,21 @@
                 try {
                     usersList = await PyPlayAuth.getAllUsersFromSheets();
                     logsList = await PyPlayAuth.getAllLogsFromSheets();
-                    if ((usersList && usersList.length > 0) || (logsList && logsList.length > 0)) {
-                        document.getElementById('sync-status-banner').innerHTML = `
-                            <div style="color: #10b981;">
-                                <strong>🟢 Google Sheets Connected:</strong> Successfully synced ${usersList.length} users and ${logsList.length} activity logs from the Google Sheet!
-                            </div>
-                        `;
-                        filterUsersList();
-                        filterLogsList();
-                    } else {
-                        throw new Error("No data retrieved from Google Sheets.");
-                    }
+                    // Show success even if sheets are empty — empty sheet ≠ connection failure
+                    document.getElementById('sync-status-banner').innerHTML = `
+                        <div style="color: #10b981;">
+                            <strong>🟢 Google Sheets Connected:</strong> Synced ${usersList.length} users and ${logsList.length} activity logs.
+                            ${usersList.length === 0 ? '<span style="color:#f59e0b;"> (Sheet appears empty — add users to see data here.)</span>' : ''}
+                        </div>
+                    `;
+                    filterUsersList();
+                    filterLogsList();
                 } catch (err) {
                     console.error("Failed to load data from sheets:", err);
                     document.getElementById('sync-status-banner').innerHTML = `
                         <div style="color: #ef4444;">
-                            <strong>🔴 Sync Failed:</strong> Google Sheets could not be reached or returned no data. Falling back to local offline records.
+                            <strong>🔴 Sync Failed:</strong> Could not reach Google Sheets. Check your Script URL in ⚙️ Settings, or ensure the Apps Script is deployed as a public Web App.
+                            <br><small style="color:var(--text-muted); margin-top:0.25rem; display:block;">Showing cached offline records instead.</small>
                         </div>
                     `;
                     const mockU = localStorage.getItem('pyplay_mock_users');

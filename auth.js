@@ -131,9 +131,20 @@ const PyPlayAuth = {
         try {
             const response = await fetch(`${this.scriptUrl}?email=${encodeURIComponent(this.user.email)}`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
+            // Guard against Google Apps Script returning an HTML error page instead of JSON
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
+                throw new Error('Response is not JSON — script may need to be redeployed.');
+            }
+            const text = await response.text();
+            // Apps Script sometimes returns "null" for not-found users — treat as no data
+            if (!text || text === 'null') {
+                this.hideToast();
+                return null;
+            }
+            const data = JSON.parse(text);
 
-            if (data) {
+            if (data && data.email) {
                 // Update local storage with fresh sheets data
                 this.saveLocalUser({
                     ...this.user,
@@ -143,15 +154,15 @@ const PyPlayAuth = {
                     role: data.role || this.user.role,
                     progress: typeof data.progress === 'string' ? JSON.parse(data.progress) : (data.progress || this.user.progress)
                 });
-                this.showToast("Progress synced with cloud!", true);
+                this.showToast("Progress synced! ☁️", true);
                 return data;
             } else {
                 this.hideToast();
                 return null;
             }
         } catch (e) {
-            console.error("Sheets sync failed:", e);
-            this.showToast("Sync failed (Offline)", true);
+            console.warn("Cloud sync skipped (offline or script unreachable):", e.message);
+            this.hideToast();
             return null;
         }
     },
@@ -162,11 +173,17 @@ const PyPlayAuth = {
         try {
             const response = await fetch(`${this.scriptUrl}?action=get_all_users`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-            return data || [];
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
+                throw new Error('Non-JSON response from Apps Script — may need redeployment.');
+            }
+            const text = await response.text();
+            if (!text || text === 'null') return [];
+            const data = JSON.parse(text);
+            return Array.isArray(data) ? data : [];
         } catch (e) {
-            console.error("Failed to fetch all users from sheets:", e);
-            return [];
+            console.warn("getAllUsersFromSheets failed:", e.message);
+            throw e; // Re-throw so admin.html's catch block shows the sync error banner
         }
     },
 
@@ -176,11 +193,17 @@ const PyPlayAuth = {
         try {
             const response = await fetch(`${this.scriptUrl}?action=get_all_logs`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const data = await response.json();
-            return data || [];
+            const contentType = response.headers.get('content-type') || '';
+            if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
+                throw new Error('Non-JSON response from Apps Script — may need redeployment.');
+            }
+            const text = await response.text();
+            if (!text || text === 'null') return [];
+            const data = JSON.parse(text);
+            return Array.isArray(data) ? data : [];
         } catch (e) {
-            console.error("Failed to fetch all logs from sheets:", e);
-            return [];
+            console.warn("getAllLogsFromSheets failed:", e.message);
+            throw e; // Re-throw so admin.html's catch block shows the sync error banner
         }
     },
 
