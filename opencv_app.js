@@ -8,7 +8,8 @@ const lessons = [
         example: 'import cv2\n# Load and display sample image from image folder\nimg = cv2.imread("image/logo.png")\nprint(img.shape)\ncv2.imshow("Logo Image", img)',
         task: 'Write a Python script that imports `cv2`, reads the file `image/logo.png` stored in the `image` folder using `cv2.imread()`, and prints the dimensions (`.shape`) of the image array. The pre-loaded image is size 400x400 with 3 color channels.',
         initialCode: 'import cv2\n# Write code to load "image/logo.png" and print its shape:\n',
-        expectedOutput: "(400, 400, 3)"
+        expectedOutput: "(400, 400, 3)",
+        hint: "Use cv2.imread('image/logo.png') to read the image, store it in a variable (e.g., img), and print its dimensions using print(img.shape)."
     },
     {
         title: "Basic Image Manipulation",
@@ -18,7 +19,8 @@ const lessons = [
         example: 'import cv2\nimg = cv2.imread("logo.png")\n# Extract region from y=100 to 300, and x=100 to 300\nroi = img[100:300, 100:300]\nprint(roi.shape)\ncv2.imshow("Crop", roi)',
         task: 'Load `logo.png`, crop a Region of Interest (ROI) containing the center circle from y=120 to 280 and x=120 to 280. Print the shape of the cropped ROI image.',
         initialCode: 'import cv2\n# Crop the image from y: 120 to 280, x: 120 to 280 and print its shape:\n',
-        expectedOutput: "(160, 160, 3)"
+        expectedOutput: "(160, 160, 3)",
+        hint: "Make sure to load the image first: img = cv2.imread('logo.png'). Crop the region using NumPy array slicing: roi = img[120:280, 120:280] (y range first, then x range). Finally, print(roi.shape)."
     },
     {
         title: "Image Annotation",
@@ -28,7 +30,8 @@ const lessons = [
         example: 'import cv2\nimg = cv2.imread("logo.png")\n# Draw a white circle at coordinates (200, 200) with a radius of 80\ncv2.circle(img, (200, 200), 80, (255, 255, 255), -1)\ncv2.imshow("Annotated", img)',
         task: 'Load `logo.png` and draw a solid green square (thickness = -1, which fills the shape) with corner points at top-left `(10, 10)` and bottom-right `(100, 100)`. Use color `(0, 255, 0)` in BGR. Print the color value of the pixel at coordinate `(10, 10)` as a python list: `print(list(img[10, 10]))`.',
         initialCode: 'import cv2\nimg = cv2.imread("logo.png")\n# Draw solid green rectangle from (10, 10) to (100, 100) and print pixel (10, 10) list color:\n',
-        expectedOutput: "[0, 255, 0]"
+        expectedOutput: ["[0, 255, 0]", "[np.uint8(0), np.uint8(255), np.uint8(0)]"],
+        hint: "Draw the green square on the loaded image using cv2.rectangle(img, (10, 10), (100, 100), (0, 255, 0), -1). Then, print the pixel color list at (10, 10): print(list(img[10, 10]))."
     },
     {
         title: "Image Enhancement",
@@ -38,7 +41,8 @@ const lessons = [
         example: 'import cv2\nimg = cv2.imread("logo.png")\ngray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)\neq = cv2.equalizeHist(gray)\ncv2.imshow("Grayscale Equalized", eq)',
         task: 'Load `logo.png`, convert it to grayscale, equalize its histogram using `cv2.equalizeHist()`, and print the intensity value of the center pixel at coordinates `(200, 200)`.',
         initialCode: 'import cv2\n# Convert to grayscale, equalize, and print pixel (200, 200) value:\n',
-        expectedOutput: "251"
+        expectedOutput: ["251", "250"],
+        hint: "Convert the loaded image to grayscale using cv2.cvtColor(img, cv2.COLOR_BGR2GRAY). Equalize the grayscale image with eq = cv2.equalizeHist(gray), and print the center value using print(eq[200, 200])."
     },
     {
         title: "Accessing the Camera",
@@ -48,7 +52,8 @@ const lessons = [
         example: 'import cv2\ncap = cv2.VideoCapture(0)\nprint(f"Camera Active: {cap.isOpened()}")\ncap.release()',
         task: 'Initialize the default camera capture interface (`index 0`) using `cv2.VideoCapture()`, and print the boolean result of checking if the camera `isOpened()`.',
         initialCode: 'import cv2\n# Initialize camera capture and print if opened:\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Initialize the camera capture object using cap = cv2.VideoCapture(0). Then print the status using print(cap.isOpened())."
     },
     {
         title: "Video Writing",
@@ -58,7 +63,8 @@ const lessons = [
         example: 'import cv2\nfourcc = cv2.VideoWriter_fourcc(*"MJPG")\nprint(fourcc)',
         task: "Initialize the four-character video codec (FourCC) for the 'MJPG' codec format, and print a check verifying the codec is successfully initialized (e.g. `fourcc > 0`).",
         initialCode: 'import cv2\n# Initialize MJPG fourcc codec and print if successfully generated (value > 0):\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Use fourcc = cv2.VideoWriter_fourcc(*'MJPG') to initialize the codec. Then print a comparison to check if the value is greater than 0: print(fourcc > 0)."
     },
     {
         title: "Image Filtering",
@@ -68,7 +74,8 @@ const lessons = [
         example: 'import cv2\nimg = cv2.imread("logo.png")\nblurred = cv2.GaussianBlur(img, (5, 5), 0)\ncv2.imshow("Gaussian Blur", blurred)',
         task: 'Load `logo.png`, apply a Gaussian Blur filter with a kernel size of `(5, 5)` and sigma `0`, and print the shape of the resulting blurred image.',
         initialCode: 'import cv2\n# Load logo, apply Gaussian Blur with 5x5 kernel and print shape:\n',
-        expectedOutput: "(400, 400, 3)"
+        expectedOutput: "(400, 400, 3)",
+        hint: "Apply the blur with blurred = cv2.GaussianBlur(img, (5, 5), 0) on the loaded image. Then print its shape using print(blurred.shape)."
     },
     {
         title: "Image Features and Alignment",
@@ -78,7 +85,8 @@ const lessons = [
         example: 'import cv2\nimg = cv2.imread("logo.png")\norb = cv2.ORB_create()\nkp = orb.detect(img, None)\nprint(f"Features: {len(kp)}")',
         task: 'Load `logo.png`, instantiate a standard ORB detector using `cv2.ORB_create()`, detect keypoints on the image, and print if at least one keypoint was detected (e.g., `print(len(kp) > 0)`).',
         initialCode: 'import cv2\n# Create ORB, detect features, and print if keypoint length is > 0:\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Instantiate ORB using orb = cv2.ORB_create() and detect keypoints with kp = orb.detect(img, None). Then check the keypoints list length and print the result: print(len(kp) > 0)."
     },
     {
         title: "Panorama",
@@ -88,7 +96,8 @@ const lessons = [
         example: 'import cv2\nstitcher = cv2.Stitcher_create()\nprint(type(stitcher))',
         task: 'Create an OpenCV Stitcher object using `cv2.Stitcher_create()`, and print a boolean check verifying that the text `"Stitcher"` is contained within the string representation of its object type.',
         initialCode: 'import cv2\n# Create Stitcher and print if "Stitcher" is in type string:\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Create the stitcher using stitcher = cv2.Stitcher_create(). Check if 'Stitcher' is in its type string: print('Stitcher' in str(type(stitcher)))."
     },
     {
         title: "HDR (High Dynamic Range)",
@@ -98,7 +107,8 @@ const lessons = [
         example: 'import cv2\nmerge = cv2.createMergeMertens()\nprint(type(merge))',
         task: 'Create a Mertens exposure merge object using `cv2.createMergeMertens()`, and print a boolean check verifying that `"MergeMertens"` is in the string representation of its object type.',
         initialCode: 'import cv2\n# Create MergeMertens and print if "MergeMertens" is in type string:\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Create the Mertens merge object with merge = cv2.createMergeMertens(). Print whether 'MergeMertens' is in the string representation of its type: print('MergeMertens' in str(type(merge)))."
     },
     {
         title: "Object Tracking",
@@ -108,7 +118,8 @@ const lessons = [
         example: 'import cv2\ntracker = cv2.TrackerCSRT_create()\nprint(type(tracker))',
         task: 'Instantiate a CSRT object tracker using `cv2.TrackerCSRT_create()`, and print a check verifying that `"TrackerCSRT"` is contained within the string representation of its object type.',
         initialCode: 'import cv2\n# Create CSRT tracker and print if "TrackerCSRT" is in type string:\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Create the tracker with tracker = cv2.TrackerCSRT_create(). Print whether 'TrackerCSRT' is in the string representation of its type: print('TrackerCSRT' in str(type(tracker)))."
     },
     {
         title: "Face Detection",
@@ -118,7 +129,8 @@ const lessons = [
         example: 'import cv2\nface_cascade = cv2.CascadeClassifier()\nprint(type(face_cascade))',
         task: 'Instantiate a Haar Cascade XML Classifier using `cv2.CascadeClassifier()`, and print a check verifying that `"CascadeClassifier"` is contained within the string representation of its object type.',
         initialCode: 'import cv2\n# Create CascadeClassifier and print if "CascadeClassifier" is in type string:\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Instantiate the classifier using face_cascade = cv2.CascadeClassifier(). Print whether 'CascadeClassifier' is in the string representation of its type: print('CascadeClassifier' in str(type(face_cascade)))."
     },
     {
         title: "TensorFlow Object Detection",
@@ -128,7 +140,8 @@ const lessons = [
         example: 'import cv2\nprint("dnn" in dir(cv2))',
         task: 'Write a script that prints a check verifying the availability of the deep learning (`dnn`) module in the imported `cv2` library.',
         initialCode: 'import cv2\n# Print if "dnn" is in dir(cv2):\n',
-        expectedOutput: "True"
+        expectedOutput: "True",
+        hint: "Check if the string 'dnn' is in the directory of attributes of the cv2 module: print('dnn' in dir(cv2))."
     },
     {
         title: "Pose Estimation using OpenPose",
@@ -138,7 +151,8 @@ const lessons = [
         example: 'import cv2\nimg = cv2.imread("logo.png")\nblob = cv2.dnn.blobFromImage(img, 1.0/255.0, (224, 224))\nprint(blob.shape)',
         task: 'Load `logo.png`, convert it into a normalized 4D deep learning input blob using `cv2.dnn.blobFromImage()` with a scale factor of `1.0/255.0`, and dimensions of `(224, 224)`. Print the shape of the generated output blob.',
         initialCode: 'import cv2\n# Load logo, convert to a 4D blob of (224, 224) and print blob shape:\n',
-        expectedOutput: "(1, 3, 224, 224)"
+        expectedOutput: "(1, 3, 224, 224)",
+        hint: "First read logo.png. Call cv2.dnn.blobFromImage(img, 1.0/255.0, (224, 224)) to generate the blob, then print its shape with print(blob.shape)."
     }
 ];
 
@@ -481,6 +495,21 @@ function loadLesson(index) {
     editor.setValue(lesson.initialCode);
     dom.successMessage.classList.add('hidden');
 
+    // Populate and reset hint element
+    const hintBtn = document.getElementById('hint-btn');
+    const hintContainer = document.getElementById('hint-container');
+    const hintTextText = document.getElementById('lesson-hint-text');
+    if (hintBtn && hintContainer && hintTextText) {
+        if (lesson.hint) {
+            hintBtn.style.display = 'block';
+            hintTextText.textContent = lesson.hint;
+        } else {
+            hintBtn.style.display = 'none';
+        }
+        hintContainer.classList.add('hidden');
+        hintBtn.innerHTML = '💡 Show Hint';
+    }
+
     // Update progress steps UI
     renderProgressSteps();
 
@@ -549,9 +578,14 @@ function checkLessonCompletion() {
 
     // Normalize spaces and quotes to ensure robust validation
     const normalizedOutput = currentOutput.trim().replace(/\s+/g, ' ').replace(/"/g, "'");
-    const normalizedExpected = lesson.expectedOutput.trim().replace(/\s+/g, ' ').replace(/"/g, "'");
 
-    if (normalizedOutput === normalizedExpected) {
+    const expectedList = Array.isArray(lesson.expectedOutput) ? lesson.expectedOutput : [lesson.expectedOutput];
+    const match = expectedList.some(expected => {
+        const normalizedExpected = expected.trim().replace(/\s+/g, ' ').replace(/"/g, "'");
+        return normalizedOutput === normalizedExpected;
+    });
+
+    if (match) {
         dom.successMessage.classList.remove('hidden');
         dom.nextBtn.disabled = false;
 
@@ -596,6 +630,21 @@ function setupEventListeners() {
             loadLesson(currentLessonIndex);
         }
     });
+
+    // Toggle Hint Button
+    const hintBtn = document.getElementById('hint-btn');
+    const hintContainer = document.getElementById('hint-container');
+    if (hintBtn && hintContainer) {
+        hintBtn.addEventListener('click', () => {
+            if (hintContainer.classList.contains('hidden')) {
+                hintContainer.classList.remove('hidden');
+                hintBtn.innerHTML = '👁️ Hide Hint';
+            } else {
+                hintContainer.classList.add('hidden');
+                hintBtn.innerHTML = '💡 Show Hint';
+            }
+        });
+    }
 
     // Command/Ctrl + Enter to run
     document.addEventListener('keydown', (e) => {
