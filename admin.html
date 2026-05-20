@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyPlay - Admin Dashboard</title>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .admin-layout {
+            display: flex;
+            flex-direction: column;
+            gap: 2rem;
+            padding: 1rem 0;
+            height: calc(100vh - 120px);
+            overflow-y: auto;
+        }
+        
+        .admin-header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sync-status-card {
+            background: rgba(0, 0, 0, 0.2);
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .sync-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--text-muted);
+        }
+        .sync-indicator.syncing {
+            background: #f59e0b;
+            animation: pulse 1s infinite;
+        }
+        .sync-indicator.success {
+            background: var(--success);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+        .sync-indicator.error {
+            background: var(--error);
+            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+        }
+        @keyframes pulse {
+            0% { transform: scale(1); opacity: 1; }
+            50% { transform: scale(1.2); opacity: 0.5; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 1.25rem;
+        }
+
+        .stat-card {
+            background: rgba(0,0,0,0.2);
+            padding: 1.5rem;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            text-align: center;
+        }
+        
+        .stat-card.primary {
+            border-color: rgba(59, 130, 246, 0.3);
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.05), rgba(0,0,0,0.2));
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #fff;
+            margin-top: 0.25rem;
+        }
+
+        .users-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            padding: 2rem;
+        }
+
+        .table-controls {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 1rem;
+            flex-wrap: wrap;
+        }
+
+        .search-input {
+            flex: 1;
+            min-width: 250px;
+            padding: 0.65rem 1rem;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+        }
+
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.15);
+        }
+
+        .filter-select {
+            padding: 0.65rem 1rem;
+            background: rgba(0, 0, 0, 0.25);
+            border: 1px solid var(--panel-border);
+            border-radius: 8px;
+            color: #fff;
+            font-family: inherit;
+            font-size: 0.9rem;
+            cursor: pointer;
+        }
+        
+        .filter-select:focus {
+            outline: none;
+            border-color: var(--accent-primary);
+        }
+        
+        .filter-select option {
+            background: #1e293b;
+            color: #fff;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            border-radius: 12px;
+            border: 1px solid var(--panel-border);
+            background: rgba(0, 0, 0, 0.1);
+        }
+
+        .admin-table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+
+        .admin-table th {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 1rem;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            font-weight: 700;
+            color: var(--text-muted);
+            border-bottom: 1px solid var(--panel-border);
+            white-space: nowrap;
+        }
+
+        .admin-table td {
+            padding: 1rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.02);
+            font-size: 0.9rem;
+        }
+        
+        .admin-table tr:hover {
+            background: rgba(255, 255, 255, 0.02);
+        }
+
+        .user-cell {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .user-avatar-small {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }
+        
+        .badge-list {
+            display: flex;
+            gap: 0.25rem;
+            flex-wrap: wrap;
+        }
+        
+        .badge-icon-small {
+            font-size: 1.2rem;
+            cursor: help;
+        }
+        
+        .course-progress-bar {
+            width: 80px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            overflow: hidden;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 0.5rem;
+        }
+        
+        .course-progress-fill {
+            height: 100%;
+            background: var(--accent-primary);
+        }
+
+        .course-progress-fill.completed {
+            background: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="glass-panel header">
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <a href="index.html" class="logo">
+                    <div class="logo-icon">🐍</div>
+                    <h1>PyPlay</h1>
+                </a>
+                <span class="badge" style="background: rgba(239, 68, 68, 0.2); color: #fca5a5;">Admin</span>
+                <a href="index.html" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">🏠 Home</a>
+                <a href="dashboard.html" class="btn btn-outline" style="padding: 0.35rem 0.75rem; font-size: 0.8rem;">📊 Dashboard</a>
+            </div>
+            <div class="controls"></div>
+        </header>
+
+        <!-- Main Workspace -->
+        <main class="admin-layout">
+            
+            <div class="admin-header-section">
+                <div>
+                    <h2 style="font-size: 2rem; font-weight: 800; color: #fff;">Admin Dashboard</h2>
+                    <p style="color: var(--text-muted); font-size: 0.95rem;">System overview and user management</p>
+                </div>
+                
+                <div class="sync-status-card">
+                    <div class="sync-indicator" id="sync-indicator"></div>
+                    <div>
+                        <div style="font-size: 0.75rem; font-weight: 600; text-transform: uppercase; color: var(--text-muted);">Sync Status</div>
+                        <div id="sync-text" style="font-size: 0.9rem; color: #fff;">Waiting to sync...</div>
+                    </div>
+                    <button class="btn btn-outline" style="padding: 0.4rem 0.8rem; margin-left: 1rem;" id="btn-refresh-data">
+                        🔄 Refresh
+                    </button>
+                </div>
+            </div>
+
+            <!-- Stats Section -->
+            <section class="glass-panel" style="padding: 2rem;">
+                <h3 style="font-size:1.25rem; font-weight:700; color:#fff; margin-bottom:1rem;">Platform Statistics</h3>
+                <div class="stats-grid">
+                    <div class="stat-card primary">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Total Users</div>
+                        <div class="stat-value" id="stat-total-users">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Active Today</div>
+                        <div class="stat-value" id="stat-active-today">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Total Logs</div>
+                        <div class="stat-value" id="stat-total-logs">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Badges Awarded</div>
+                        <div class="stat-value" id="stat-total-badges">0</div>
+                    </div>
+                    <div class="stat-card">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Course Completions</div>
+                        <div class="stat-value" id="stat-total-completions">0</div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Users Table Section -->
+            <section class="glass-panel users-panel">
+                <div class="table-controls">
+                    <h3 style="font-size:1.25rem; font-weight:700; color:#fff; margin: 0;">User Management</h3>
+                    
+                    <div style="display: flex; gap: 1rem; align-items: center; flex: 1; justify-content: flex-end;">
+                        <input type="text" id="search-users" class="search-input" placeholder="Search by name or email...">
+                        
+                        <select id="filter-course" class="filter-select">
+                            <option value="all">All Courses</option>
+                            <option value="python">Completed Python</option>
+                            <option value="opencv">Completed OpenCV</option>
+                            <option value="arduino">Completed Arduino</option>
+                            <option value="datavis">Completed DataVis</option>
+                        </select>
+                        
+                        <select id="filter-role" class="filter-select">
+                            <option value="all">All Roles</option>
+                            <option value="Learner">Learners</option>
+                            <option value="Admin">Admins</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table class="admin-table">
+                        <thead>
+                            <tr>
+                                <th>User</th>
+                                <th>Role</th>
+                                <th>Progress (Py/CV/Ar/DV)</th>
+                                <th>Badges</th>
+                                <th>Last Active</th>
+                            </tr>
+                        </thead>
+                        <tbody id="users-table-body">
+                            <!-- Rows injected by admin_app.js -->
+                            <tr>
+                                <td colspan="5" style="text-align: center; color: var(--text-muted);">Loading user data...</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="auth.js"></script>
+    <script src="admin_app.js"></script>
+</body>
+</html>
