@@ -187,130 +187,146 @@ const dom = {
 let editor;
 
 async function init() {
-    dom.totalLessons.textContent = lessons.length;
-
-    // Initialize CodeMirror
-    editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
-        mode: 'python',
-        theme: 'dracula',
-        lineNumbers: true,
-        autoCloseBrackets: true,
-        indentUnit: 4,
-        matchBrackets: true
-    });
-
-    // SYNC FIRST: Pull latest progress from Google Sheets before reading progress
-    if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user && PyPlayAuth.scriptUrl) {
-        try {
-            await PyPlayAuth.syncFromSheets();
-        } catch (e) {
-            console.warn("Init sync failed, using local progress.", e);
-        }
-    }
-
-    // Restore progress/resume from last uncompleted lesson
-    if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
-
-        if (!PyPlayAuth.user.progress) {
-            PyPlayAuth.user.progress = {};
-        }
-        const progressObj = PyPlayAuth.user.progress || {};
-        const pyProgress = progressObj.opencv || { completed_lessons: [], completed: false, highest_lesson: 0 };
-        const completed = pyProgress.completed_lessons || [];
-
-        // Find highest lesson unlocked
-        if (pyProgress.highest_lesson !== undefined) {
-            highestLessonIndex = pyProgress.highest_lesson;
-        } else {
-            // Fallback to max completed lesson index + 1 or 0
-            highestLessonIndex = completed.length > 0 ? Math.max(...completed) + 1 : 0;
-        }
-
-        // Cap highestLessonIndex to lessons.length - 1
-        highestLessonIndex = Math.min(highestLessonIndex, lessons.length - 1);
-
-        // Find first lesson index not in completed lessons list
-        let resumeIndex = 0;
-        for (let i = 0; i < lessons.length; i++) {
-            if (!completed.includes(i)) {
-                resumeIndex = i;
-                break;
-            }
-        }
-        // If all are completed, set to last lesson
-        if (completed.length === lessons.length) {
-            resumeIndex = lessons.length - 1;
-            highestLessonIndex = lessons.length - 1;
-        }
-        currentLessonIndex = resumeIndex;
-    }
-
-    // Load lesson
-    loadLesson(currentLessonIndex);
-
-    // Load Pyodide
     try {
-        dom.outputConsole.textContent = "Initializing Python Engine (Pyodide)...\nThis may take a moment on first load.";
-        pyodideInstance = await loadPyodide({
-            stdout: (text) => appendOutput(text + "\n"),
-            stderr: (text) => appendError(text + "\n")
+        if (dom.totalLessons) {
+            dom.totalLessons.textContent = lessons.length;
+        }
+
+        // Initialize CodeMirror
+        if (typeof CodeMirror === 'undefined') {
+            throw new Error("CodeMirror editor library could not be loaded. Please check your internet connection.");
+        }
+        const editorTextarea = document.getElementById('code-editor');
+        if (!editorTextarea) {
+            throw new Error("Code editor textarea (#code-editor) element not found in DOM.");
+        }
+        editor = CodeMirror.fromTextArea(editorTextarea, {
+            mode: 'python',
+            theme: 'dracula',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            indentUnit: 4,
+            matchBrackets: true
         });
 
-        appendOutput("Loading OpenCV WebAssembly library (this may take a few seconds)...\n");
-        await pyodideInstance.loadPackage("opencv-python");
-
-        // Create 'image' folder inside Pyodide's virtual filesystem
-        try {
-            pyodideInstance.FS.mkdir('image');
-        } catch (e) {
-            console.warn("Folder 'image' already exists or could not be created:", e);
+        // SYNC FIRST: Pull latest progress from Google Sheets before reading progress
+        if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user && PyPlayAuth.scriptUrl) {
+            try {
+                await PyPlayAuth.syncFromSheets();
+            } catch (e) {
+                console.warn("Init sync failed, using local progress.", e);
+            }
         }
 
-        // Fetch and write physical course images dynamically to Pyodide virtual filesystem
-        let courseImages = ["logo.png", "duck.jpg", "test.png"];
-        try {
-            appendOutput("Scanning 'image' folder for course assets...\n");
-            const listResponse = await fetch('image/');
-            if (listResponse.ok) {
-                const htmlText = await listResponse.text();
-                const parser = new DOMParser();
-                const doc = parser.parseFromString(htmlText, 'text/html');
-                const links = Array.from(doc.querySelectorAll('a'))
-                    .map(a => a.getAttribute('href'))
-                    .map(href => {
-                        try { return decodeURIComponent(href); } catch (e) { return href; }
-                    })
-                    .filter(href => href && /\.(png|jpg|jpeg|bmp)$/i.test(href))
-                    .map(href => href.substring(href.lastIndexOf('/') + 1));
+        // Restore progress/resume from last uncompleted lesson
+        if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
+            if (!PyPlayAuth.user.progress) {
+                PyPlayAuth.user.progress = {};
+            }
+            const progressObj = PyPlayAuth.user.progress || {};
+            const pyProgress = progressObj.opencv || { completed_lessons: [], completed: false, highest_lesson: 0 };
+            let completed = pyProgress.completed_lessons;
+            if (!Array.isArray(completed)) {
+                completed = [];
+            }
 
-                if (links.length > 0) {
-                    courseImages = [...new Set(links)];
+            // Find highest lesson unlocked
+            if (pyProgress.highest_lesson !== undefined && pyProgress.highest_lesson !== null) {
+                const parsedHighest = Number(pyProgress.highest_lesson);
+                highestLessonIndex = isNaN(parsedHighest) ? 0 : parsedHighest;
+            } else {
+                // Fallback to max completed lesson index + 1 or 0
+                highestLessonIndex = completed.length > 0 ? Math.max(...completed) + 1 : 0;
+            }
+
+            if (isNaN(highestLessonIndex)) {
+                highestLessonIndex = 0;
+            }
+            // Cap highestLessonIndex to lessons.length - 1
+            highestLessonIndex = Math.min(highestLessonIndex, lessons.length - 1);
+
+            // Find first lesson index not in completed lessons list
+            let resumeIndex = 0;
+            for (let i = 0; i < lessons.length; i++) {
+                if (!completed.includes(i)) {
+                    resumeIndex = i;
+                    break;
                 }
             }
-        } catch (e) {
-            console.warn("Could not dynamically parse image/ directory index, using standard fallbacks:", e);
+            // If all are completed, set to last lesson
+            if (completed.length === lessons.length) {
+                resumeIndex = lessons.length - 1;
+                highestLessonIndex = lessons.length - 1;
+            }
+            currentLessonIndex = resumeIndex;
         }
 
-        for (const imgName of courseImages) {
-            try {
-                appendOutput(`Preloading course image: ${imgName}...\n`);
-                const imgResponse = await fetch(`image/${imgName}`);
-                if (imgResponse.ok) {
-                    const arrayBuffer = await imgResponse.arrayBuffer();
-                    const uint8Arr = new Uint8Array(arrayBuffer);
+        // Load lesson
+        loadLesson(currentLessonIndex);
 
-                    // Write to both root and image/ folder so both paths resolve!
-                    pyodideInstance.FS.writeFile(imgName, uint8Arr);
-                    pyodideInstance.FS.writeFile(`image/${imgName}`, uint8Arr);
+        // Load Pyodide
+        try {
+            dom.outputConsole.textContent = "Initializing Python Engine (Pyodide)...\nThis may take a moment on first load.";
+            pyodideInstance = await loadPyodide({
+                stdout: (text) => appendOutput(text + "\n"),
+                stderr: (text) => appendError(text + "\n")
+            });
+
+            appendOutput("Loading OpenCV WebAssembly library (this may take a few seconds)...\n");
+            await pyodideInstance.loadPackage("opencv-python");
+
+            // Create 'image' folder inside Pyodide's virtual filesystem
+            try {
+                pyodideInstance.FS.mkdir('image');
+            } catch (e) {
+                console.warn("Folder 'image' already exists or could not be created:", e);
+            }
+
+            // Fetch and write physical course images dynamically to Pyodide virtual filesystem
+            let courseImages = ["logo.png", "duck.jpg", "test.png"];
+            try {
+                appendOutput("Scanning 'image' folder for course assets...\n");
+                const listResponse = await fetch('image/');
+                if (listResponse.ok) {
+                    const htmlText = await listResponse.text();
+                    const parser = new DOMParser();
+                    const doc = parser.parseFromString(htmlText, 'text/html');
+                    const links = Array.from(doc.querySelectorAll('a'))
+                        .map(a => a.getAttribute('href'))
+                        .map(href => {
+                            try { return decodeURIComponent(href); } catch (e) { return href; }
+                        })
+                        .filter(href => href && /\.(png|jpg|jpeg|bmp)$/i.test(href))
+                        .map(href => href.substring(href.lastIndexOf('/') + 1));
+
+                    if (links.length > 0) {
+                        courseImages = [...new Set(links)];
+                    }
                 }
             } catch (e) {
-                console.warn(`Could not preload image asset ${imgName} into Pyodide FS:`, e);
+                console.warn("Could not dynamically parse image/ directory index, using Fallbacks:", e);
             }
-        }
-        appendOutput("All dynamic image assets loaded successfully!\n");
 
-        // Inject synthetic OpenCV environment overrides
-        await pyodideInstance.runPythonAsync(`
+            for (const imgName of courseImages) {
+                try {
+                    appendOutput(`Preloading course image: ${imgName}...\n`);
+                    const imgResponse = await fetch(`image/${imgName}`);
+                    if (imgResponse.ok) {
+                        const arrayBuffer = await imgResponse.arrayBuffer();
+                        const uint8Arr = new Uint8Array(arrayBuffer);
+
+                        // Write to both root and image/ folder so both paths resolve!
+                        pyodideInstance.FS.writeFile(imgName, uint8Arr);
+                        pyodideInstance.FS.writeFile(`image/${imgName}`, uint8Arr);
+                    }
+                } catch (e) {
+                    console.warn(`Could not preload image asset ${imgName} into Pyodide FS:`, e);
+                }
+            }
+            appendOutput("All dynamic image assets loaded successfully!\n");
+
+            // Inject synthetic OpenCV environment overrides
+            await pyodideInstance.runPythonAsync(`
 import sys
 import types
 
@@ -463,9 +479,13 @@ function renderProgressSteps() {
     if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
         const progressObj = PyPlayAuth.user.progress || {};
         const cvProgress = progressObj.opencv || { completed_lessons: [], completed: false, highest_lesson: 0 };
-        const completed = cvProgress.completed_lessons || [];
-        if (cvProgress.highest_lesson !== undefined) {
-            highest = cvProgress.highest_lesson;
+        let completed = cvProgress.completed_lessons;
+        if (!Array.isArray(completed)) {
+            completed = [];
+        }
+        if (cvProgress.highest_lesson !== undefined && cvProgress.highest_lesson !== null) {
+            const parsedHighest = Number(cvProgress.highest_lesson);
+            highest = isNaN(parsedHighest) ? 0 : parsedHighest;
         } else {
             highest = completed.length > 0 ? Math.max(...completed) + 1 : 0;
         }
@@ -534,7 +554,10 @@ function loadLesson(index) {
         ? (PyPlayAuth.user.progress || {}) 
         : {};
     const cvProgress = progressObj.opencv || { completed_lessons: [], completed: false };
-    const completed = cvProgress.completed_lessons || [];
+    let completed = cvProgress.completed_lessons;
+    if (!Array.isArray(completed)) {
+        completed = [];
+    }
 
     if (completed.includes(index) || index < highestLessonIndex) {
         dom.nextBtn.disabled = false;

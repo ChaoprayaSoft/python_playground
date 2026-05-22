@@ -110,6 +110,9 @@ const PyPlayAuth = {
         const stored = localStorage.getItem('pyplay_user');
         if (stored) {
             this.user = JSON.parse(stored);
+            if (this.user && this.user.email) {
+                this.user.email = this.user.email.toLowerCase().trim();
+            }
             if (typeof this.user.progress === 'string') {
                 try {
                     this.user.progress = JSON.parse(this.user.progress);
@@ -124,6 +127,9 @@ const PyPlayAuth = {
     },
 
     saveLocalUser(userData) {
+        if (userData && userData.email) {
+            userData.email = userData.email.toLowerCase().trim();
+        }
         this.user = userData;
         localStorage.setItem('pyplay_user', JSON.stringify(userData));
         this.updateHeaderUI();
@@ -138,16 +144,18 @@ const PyPlayAuth = {
         try {
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 5000);
-            const response = await fetch(`${this.scriptUrl}?email=${encodeURIComponent(this.user.email)}`, { signal: controller.signal });
+            const userEmail = String(this.user.email).toLowerCase().trim();
+            const response = await fetch(`${this.scriptUrl}?email=${encodeURIComponent(userEmail)}`, { signal: controller.signal });
             clearTimeout(timeoutId);
 
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            // Guard against Google Apps Script returning an HTML error page instead of JSON
-            const contentType = response.headers.get('content-type') || '';
-            if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
-                throw new Error('Response is not JSON — script may need to be redeployed.');
-            }
+            
             const text = await response.text();
+            const trimmed = text.trim();
+            if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
+                throw new Error('Response is HTML instead of JSON — script may need to be redeployed.');
+            }
+            
             // Apps Script sometimes returns "null" for not-found users — treat as no data
             if (!text || text === 'null') {
                 this.hideToast();
@@ -196,11 +204,13 @@ const PyPlayAuth = {
         try {
             const response = await fetch(`${this.scriptUrl}?action=get_all_users`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const contentType = response.headers.get('content-type') || '';
-            if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
-                throw new Error('Non-JSON response from Apps Script — may need redeployment.');
-            }
+            
             const text = await response.text();
+            const trimmed = text.trim();
+            if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
+                throw new Error('Response is HTML instead of JSON — script may need to be redeployed.');
+            }
+            
             if (!text || text === 'null') return [];
             const data = JSON.parse(text);
             return Array.isArray(data) ? data : [];
@@ -216,11 +226,13 @@ const PyPlayAuth = {
         try {
             const response = await fetch(`${this.scriptUrl}?action=get_all_logs`);
             if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-            const contentType = response.headers.get('content-type') || '';
-            if (!contentType.includes('application/json') && !contentType.includes('text/plain')) {
-                throw new Error('Non-JSON response from Apps Script — may need redeployment.');
-            }
+            
             const text = await response.text();
+            const trimmed = text.trim();
+            if (trimmed.startsWith('<') || trimmed.toLowerCase().startsWith('<!doctype')) {
+                throw new Error('Response is HTML instead of JSON — script may need to be redeployed.');
+            }
+            
             if (!text || text === 'null') return [];
             const data = JSON.parse(text);
             return Array.isArray(data) ? data : [];
@@ -244,7 +256,7 @@ const PyPlayAuth = {
                 },
                 body: JSON.stringify({
                     type: 'user',
-                    email: userData.email,
+                    email: String(userData.email).toLowerCase().trim(),
                     name: userData.name,
                     avatar: userData.avatar,
                     color: userData.color,
@@ -272,7 +284,7 @@ const PyPlayAuth = {
                 },
                 body: JSON.stringify({
                     type: 'log',
-                    email: email,
+                    email: email ? String(email).toLowerCase().trim() : "",
                     name: name,
                     status: status,
                     timestamp: new Date().toISOString()
@@ -285,6 +297,7 @@ const PyPlayAuth = {
 
     // --- Actions ---
     async login(email, name, role = "Learner", avatar = null) {
+        email = String(email).toLowerCase().trim();
         const randomAvatar = avatar || DEFAULT_AVATARS[Math.floor(Math.random() * DEFAULT_AVATARS.length)];
         const randomColor = DEFAULT_COLORS[Math.floor(Math.random() * DEFAULT_COLORS.length)];
 
@@ -323,7 +336,7 @@ const PyPlayAuth = {
                     }
                     
                     userData = {
-                        email: sheetsData.email,
+                        email: String(sheetsData.email).toLowerCase().trim(),
                         name: sheetsData.name || name,
                         avatar: sheetsData.avatar || randomAvatar,
                         color: sheetsData.color || randomColor,
@@ -585,12 +598,12 @@ const PyPlayAuth = {
 
     handleEmailLogin() {
         const name = document.getElementById('login-name-input').value.trim();
-        const email = document.getElementById('login-email-input').value.trim();
+        const email = document.getElementById('login-email-input').value.trim().toLowerCase();
         if (!name || !email) {
             alert("Please provide both name and email.");
             return;
         }
-        if (!email.toLowerCase().endsWith('@gmail.com') && !email.toLowerCase().endsWith('@googlemail.com')) {
+        if (!email.endsWith('@gmail.com') && !email.endsWith('@googlemail.com')) {
             alert("Please enter a valid @gmail.com address.");
             return;
         }

@@ -42,14 +42,14 @@ function handleUserUpdate(ss, data) {
     sheet.setFrozenRows(1);
   }
 
-  var email = data.email;
+  var email = data.email ? String(data.email).toLowerCase().trim() : "";
   var rows = sheet.getDataRange().getValues();
   var rowIndex = -1;
   var existingRole = data.role || "Learner"; // default to payload role
 
   // Find existing user by email to preserve manually assigned roles (e.g. Admin)
   for (var i = 1; i < rows.length; i++) {
-    if (rows[i][0] === email) {
+    if (rows[i][0] && String(rows[i][0]).toLowerCase().trim() === email) {
       rowIndex = i + 1;
       if (rows[i][4]) {
         existingRole = rows[i][4]; // Keep manual sheet assignment
@@ -59,7 +59,7 @@ function handleUserUpdate(ss, data) {
   }
 
   var rowData = [
-    data.email,
+    email,
     data.name,
     data.avatar || "🐱",
     data.color || "#3b82f6",
@@ -87,7 +87,7 @@ function handleActivityLog(ss, data) {
   
   logSheet.appendRow([
     data.timestamp || new Date().toISOString(),
-    data.email,
+    data.email ? String(data.email).toLowerCase().trim() : "",
     data.name,
     data.status || "Activity"
   ]);
@@ -108,7 +108,7 @@ function doGet(e) {
     return getAllLogs(ss, callback);
   }
   
-  var email = e.parameter.email;
+  var email = e.parameter.email ? String(e.parameter.email).toLowerCase().trim() : "";
   var sheet = ss.getSheetByName("Users");
   if (!sheet || !email) return sendResponse(null, callback);
 
@@ -116,7 +116,7 @@ function doGet(e) {
   var user = null;
 
   for (var i = 1; i < rows.length; i++) {
-    if (rows[i][0] === email) {
+    if (rows[i][0] && String(rows[i][0]).toLowerCase().trim() === email) {
       user = {
         email: rows[i][0],
         name: rows[i][1],

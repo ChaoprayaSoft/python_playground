@@ -162,80 +162,109 @@ const dom = {
 let editor;
 
 async function init() {
-    dom.totalLessons.textContent = lessons.length;
-    
-    // Initialize CodeMirror
-    editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
-        mode: 'python',
-        theme: 'dracula',
-        lineNumbers: true,
-        autoCloseBrackets: true,
-        indentUnit: 4,
-        matchBrackets: true
-    });
-    
-    // SYNC FIRST: Pull latest progress from Google Sheets before reading progress
-    if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user && PyPlayAuth.scriptUrl) {
-        try {
-            await PyPlayAuth.syncFromSheets();
-        } catch (e) {
-            console.warn("Init sync failed, using local progress.", e);
-        }
-    }
-    
-    // Restore progress/resume from last uncompleted lesson
-    if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
-        const progressObj = PyPlayAuth.user.progress || {};
-        const pyProgress = progressObj.python || { completed_lessons: [], completed: false, highest_lesson: 0 };
-        const completed = pyProgress.completed_lessons || [];
-        
-        // Find highest lesson unlocked
-        if (pyProgress.highest_lesson !== undefined) {
-            highestLessonIndex = pyProgress.highest_lesson;
-        } else {
-            // Fallback to max completed lesson index + 1 or 0
-            highestLessonIndex = completed.length > 0 ? Math.max(...completed) + 1 : 0;
+    try {
+        if (dom.totalLessons) {
+            dom.totalLessons.textContent = lessons.length;
         }
         
-        // Cap highestLessonIndex to lessons.length - 1
-        highestLessonIndex = Math.min(highestLessonIndex, lessons.length - 1);
+        // Initialize CodeMirror
+        if (typeof CodeMirror === 'undefined') {
+            throw new Error("CodeMirror editor library could not be loaded. Please check your internet connection.");
+        }
+        const editorTextarea = document.getElementById('code-editor');
+        if (!editorTextarea) {
+            throw new Error("Code editor textarea (#code-editor) element not found in DOM.");
+        }
+        editor = CodeMirror.fromTextArea(editorTextarea, {
+            mode: 'python',
+            theme: 'dracula',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            indentUnit: 4,
+            matchBrackets: true
+        });
         
-        // Find first lesson index not in completed lessons list
-        let resumeIndex = 0;
-        for (let i = 0; i < lessons.length; i++) {
-            if (!completed.includes(i)) {
-                resumeIndex = i;
-                break;
+        // SYNC FIRST: Pull latest progress from Google Sheets before reading progress
+        if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user && PyPlayAuth.scriptUrl) {
+            try {
+                await PyPlayAuth.syncFromSheets();
+            } catch (e) {
+                console.warn("Init sync failed, using local progress.", e);
             }
         }
-        // If all are completed, set to last lesson
-        if (completed.length === lessons.length) {
-            resumeIndex = lessons.length - 1;
-            highestLessonIndex = lessons.length - 1;
-        }
-        currentLessonIndex = resumeIndex;
-    }
-    
-    // Load lesson
-    loadLesson(currentLessonIndex);
-    
-    // Load Pyodide
-    try {
-        dom.outputConsole.textContent = "Initializing Python Engine (Pyodide)...\nThis may take a moment on first load.";
-        pyodideInstance = await loadPyodide({
-            stdout: (text) => appendOutput(text + "\n"),
-            stderr: (text) => appendError(text + "\n")
-        });
-        pyodideReady = true;
         
-        dom.outputConsole.textContent = "Python Engine Ready! 🐍\n\n";
-        dom.runBtn.disabled = false;
+        // Restore progress/resume from last uncompleted lesson
+        if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
+            const progressObj = PyPlayAuth.user.progress || {};
+            const pyProgress = progressObj.python || { completed_lessons: [], completed: false, highest_lesson: 0 };
+            let completed = pyProgress.completed_lessons;
+            if (!Array.isArray(completed)) {
+                completed = [];
+            }
+            
+            // Find highest lesson unlocked
+            if (pyProgress.highest_lesson !== undefined && pyProgress.highest_lesson !== null) {
+                const parsedHighest = Number(pyProgress.highest_lesson);
+                highestLessonIndex = isNaN(parsedHighest) ? 0 : parsedHighest;
+            } else {
+                // Fallback to max completed lesson index + 1 or 0
+                highestLessonIndex = completed.length > 0 ? Math.max(...completed) + 1 : 0;
+            }
+            
+            if (isNaN(highestLessonIndex)) {
+                highestLessonIndex = 0;
+            }
+            
+            // Cap highestLessonIndex to lessons.length - 1
+            highestLessonIndex = Math.min(highestLessonIndex, lessons.length - 1);
+            
+            // Find first lesson index not in completed lessons list
+            let resumeIndex = 0;
+            for (let i = 0; i < lessons.length; i++) {
+                if (!completed.includes(i)) {
+                    resumeIndex = i;
+                    break;
+                }
+            }
+            // If all are completed, set to last lesson
+            if (completed.length === lessons.length) {
+                resumeIndex = lessons.length - 1;
+                highestLessonIndex = lessons.length - 1;
+            }
+            currentLessonIndex = resumeIndex;
+        }
+        
+        // Load lesson
+        loadLesson(currentLessonIndex);
+        
+        // Load Pyodide
+        try {
+            dom.outputConsole.textContent = "Initializing Python Engine (Pyodide)...\nThis may take a moment on first load.";
+            pyodideInstance = await loadPyodide({
+                stdout: (text) => appendOutput(text + "\n"),
+                stderr: (text) => appendError(text + "\n")
+            });
+            pyodideReady = true;
+            
+            dom.outputConsole.textContent = "Python Engine Ready! 🐍\n\n";
+            dom.runBtn.disabled = false;
+        } catch (err) {
+            dom.outputConsole.innerHTML = `<span class="terminal-error">Failed to load Python Engine. Please check your internet connection.</span>`;
+            console.error(err);
+        }
+        
+        setupEventListeners();
     } catch (err) {
-        dom.outputConsole.innerHTML = `<span class="terminal-error">Failed to load Python Engine. Please check your internet connection.</span>`;
-        console.error(err);
+        console.error("Initialization failed:", err);
+        const conceptEl = document.getElementById('lesson-concept') || (dom && dom.lessonConcept);
+        if (conceptEl) {
+            conceptEl.innerHTML = `<div class="terminal-error" style="color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); font-family: 'Inter', sans-serif;">
+                <strong>⚠️ App Initialization Failed</strong><br>
+                ${err.message || err}<br><br>
+                Please ensure you are connected to the internet (or that CDN resources loaded correctly) and refresh the page.
+            </div>`;
+        }
     }
-    
-    setupEventListeners();
 }
 
 // --- Functions ---
@@ -251,9 +280,13 @@ function renderProgressSteps() {
     if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
         const progressObj = PyPlayAuth.user.progress || {};
         const pyProgress = progressObj.python || { completed_lessons: [], completed: false, highest_lesson: 0 };
-        const completed = pyProgress.completed_lessons || [];
-        if (pyProgress.highest_lesson !== undefined) {
-            highest = pyProgress.highest_lesson;
+        let completed = pyProgress.completed_lessons;
+        if (!Array.isArray(completed)) {
+            completed = [];
+        }
+        if (pyProgress.highest_lesson !== undefined && pyProgress.highest_lesson !== null) {
+            const parsedHighest = Number(pyProgress.highest_lesson);
+            highest = isNaN(parsedHighest) ? 0 : parsedHighest;
         } else {
             highest = completed.length > 0 ? Math.max(...completed) + 1 : 0;
         }
@@ -307,7 +340,10 @@ function loadLesson(index) {
         ? (PyPlayAuth.user.progress || {}) 
         : {};
     const pyProgress = progressObj.python || { completed_lessons: [], completed: false };
-    const completed = pyProgress.completed_lessons || [];
+    let completed = pyProgress.completed_lessons;
+    if (!Array.isArray(completed)) {
+        completed = [];
+    }
     
     if (completed.includes(index) || index < highestLessonIndex) {
         dom.nextBtn.disabled = false;

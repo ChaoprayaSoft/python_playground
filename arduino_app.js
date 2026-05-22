@@ -515,60 +515,86 @@ function initFloatingDocks() {
 
 // --- Initialization ---
 async function init() {
-    dom.totalLessons.textContent = lessons.length;
-    
-    // Initialize CodeMirror (C++ clike mode)
-    editor = CodeMirror.fromTextArea(document.getElementById('code-editor'), {
-        mode: 'text/x-c++src',
-        theme: 'dracula',
-        lineNumbers: true,
-        autoCloseBrackets: true,
-        indentUnit: 2,
-        matchBrackets: true
-    });
-    
-    // SYNC FIRST: Pull latest progress from Google Sheets before reading progress
-    if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user && PyPlayAuth.scriptUrl) {
-        try {
-            await PyPlayAuth.syncFromSheets();
-        } catch (e) {
-            console.warn("Init sync failed, using local progress.", e);
-        }
-    }
-    
-    // Restore Progress
-    if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
-
-        const progressObj = PyPlayAuth.user.progress || {};
-        const ardProgress = progressObj.arduino || { completed_lessons: [], completed: false, highest_lesson: 0 };
-        const completed = ardProgress.completed_lessons || [];
-        
-        if (ardProgress.highest_lesson !== undefined) {
-            highestLessonIndex = ardProgress.highest_lesson;
-        } else {
-            highestLessonIndex = completed.length > 0 ? Math.max(...completed) + 1 : 0;
+    try {
+        if (dom.totalLessons) {
+            dom.totalLessons.textContent = lessons.length;
         }
         
-        highestLessonIndex = Math.min(highestLessonIndex, lessons.length - 1);
+        // Initialize CodeMirror (C++ clike mode)
+        if (typeof CodeMirror === 'undefined') {
+            throw new Error("CodeMirror editor library could not be loaded. Please check your internet connection.");
+        }
+        const editorTextarea = document.getElementById('code-editor');
+        if (!editorTextarea) {
+            throw new Error("Code editor textarea (#code-editor) element not found in DOM.");
+        }
+        editor = CodeMirror.fromTextArea(editorTextarea, {
+            mode: 'text/x-c++src',
+            theme: 'dracula',
+            lineNumbers: true,
+            autoCloseBrackets: true,
+            indentUnit: 2,
+            matchBrackets: true
+        });
         
-        let resumeIndex = 0;
-        for (let i = 0; i < lessons.length; i++) {
-            if (!completed.includes(i)) {
-                resumeIndex = i;
-                break;
+        // SYNC FIRST: Pull latest progress from Google Sheets before reading progress
+        if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user && PyPlayAuth.scriptUrl) {
+            try {
+                await PyPlayAuth.syncFromSheets();
+            } catch (e) {
+                console.warn("Init sync failed, using local progress.", e);
             }
         }
         
-        if (completed.length === lessons.length) {
-            resumeIndex = lessons.length - 1;
-            highestLessonIndex = lessons.length - 1;
+        // Restore Progress
+        if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
+            const progressObj = PyPlayAuth.user.progress || {};
+            const ardProgress = progressObj.arduino || { completed_lessons: [], completed: false, highest_lesson: 0 };
+            let completed = ardProgress.completed_lessons;
+            if (!Array.isArray(completed)) {
+                completed = [];
+            }
+            
+            if (ardProgress.highest_lesson !== undefined && !isNaN(ardProgress.highest_lesson)) {
+                highestLessonIndex = Number(ardProgress.highest_lesson);
+            } else {
+                highestLessonIndex = completed.length > 0 ? Math.max(...completed) + 1 : 0;
+            }
+            
+            if (isNaN(highestLessonIndex)) {
+                highestLessonIndex = 0;
+            }
+            highestLessonIndex = Math.min(highestLessonIndex, lessons.length - 1);
+            
+            let resumeIndex = 0;
+            for (let i = 0; i < lessons.length; i++) {
+                if (!completed.includes(i)) {
+                    resumeIndex = i;
+                    break;
+                }
+            }
+            
+            if (completed.length === lessons.length) {
+                resumeIndex = lessons.length - 1;
+                highestLessonIndex = lessons.length - 1;
+            }
+            currentLessonIndex = resumeIndex;
         }
-        currentLessonIndex = resumeIndex;
+        
+        loadLesson(currentLessonIndex);
+        setupEventListeners();
+        initFloatingDocks();
+    } catch (err) {
+        console.error("Initialization failed:", err);
+        const conceptEl = document.getElementById('lesson-concept') || (dom && dom.lessonConcept);
+        if (conceptEl) {
+            conceptEl.innerHTML = `<div class="terminal-error" style="color: #ef4444; background: rgba(239, 68, 68, 0.1); padding: 1rem; border-radius: 8px; border: 1px solid rgba(239, 68, 68, 0.2); font-family: 'Inter', sans-serif;">
+                <strong>⚠️ App Initialization Failed</strong><br>
+                ${err.message || err}<br><br>
+                Please ensure you are connected to the internet (or that CDN resources loaded correctly) and refresh the page.
+            </div>`;
+        }
     }
-    
-    loadLesson(currentLessonIndex);
-    setupEventListeners();
-    initFloatingDocks();
 }
 
 // --- Load Lesson & Render Elements ---
@@ -598,7 +624,10 @@ function loadLesson(index) {
         ? (PyPlayAuth.user.progress || {}) 
         : {};
     const ardProgress = progressObj.arduino || { completed_lessons: [], completed: false };
-    const completed = ardProgress.completed_lessons || [];
+    let completed = ardProgress.completed_lessons;
+    if (!Array.isArray(completed)) {
+        completed = [];
+    }
     
     if (completed.includes(index) || index < highestLessonIndex) {
         dom.nextBtn.disabled = false;
@@ -617,8 +646,16 @@ function renderProgressSteps() {
     if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user) {
         const progressObj = PyPlayAuth.user.progress || {};
         const ardProgress = progressObj.arduino || { completed_lessons: [], completed: false, highest_lesson: 0 };
-        const completed = ardProgress.completed_lessons || [];
-        highest = ardProgress.highest_lesson !== undefined ? ardProgress.highest_lesson : (completed.length > 0 ? Math.max(...completed) + 1 : 0);
+        let completed = ardProgress.completed_lessons;
+        if (!Array.isArray(completed)) {
+            completed = [];
+        }
+        highest = (ardProgress.highest_lesson !== undefined && !isNaN(ardProgress.highest_lesson)) 
+            ? Number(ardProgress.highest_lesson) 
+            : (completed.length > 0 ? Math.max(...completed) + 1 : 0);
+        if (isNaN(highest)) {
+            highest = 0;
+        }
         highest = Math.min(highest, lessons.length - 1);
         highestLessonIndex = highest;
     }
