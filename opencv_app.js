@@ -209,7 +209,11 @@ async function init() {
             matchBrackets: true
         });
 
-        // SYNC FIRST: Pull latest progress from Google Sheets before reading progress
+        // Load lesson immediately so the user sees content right away (not "Loading...")
+        // We'll reload with the correct resume index after syncing progress below.
+        loadLesson(0);
+
+        // SYNC: Pull latest progress from Google Sheets
         if (typeof PyPlayAuth !== 'undefined' && PyPlayAuth.user && PyPlayAuth.scriptUrl) {
             try {
                 await PyPlayAuth.syncFromSheets();
@@ -261,7 +265,7 @@ async function init() {
             currentLessonIndex = resumeIndex;
         }
 
-        // Load lesson
+        // Reload lesson with correct resume index after progress is restored
         loadLesson(currentLessonIndex);
 
         // Load Pyodide
