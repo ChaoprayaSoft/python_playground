@@ -578,7 +578,7 @@ function renderVisualChart(plotData) {
                 tension: 0.4,
                 pointBackgroundColor: '#fff',
                 pointBorderColor: '#3b82f6',
-                pointRadius: plotData.type === 'line' ? 5 : 0
+                pointRadius: (plotData.type === 'line' || plotData.type === 'scatter') ? 5 : 0
             }))
         },
         options: {
