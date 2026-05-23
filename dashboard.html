@@ -249,6 +249,10 @@
                         <div class="stat-value" id="stat-javascript-completed">0 / 13</div>
                     </div>
                     <div class="stat-card">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">AI Progress</div>
+                        <div class="stat-value" id="stat-ai-completed">0 / 12</div>
+                    </div>
+                    <div class="stat-card">
                         <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Total XP</div>
                         <div class="stat-value" id="stat-xp">0 XP</div>
                     </div>
@@ -295,6 +299,13 @@
                             <div class="badge-icon">🟨</div>
                             <div class="badge-title">JS Web Master</div>
                             <div class="badge-desc">Complete all 13 JavaScript lessons</div>
+                        </div>
+
+                        <!-- AI Badge -->
+                        <div class="badge-card" id="badge-ai">
+                            <div class="badge-icon">🤖</div>
+                            <div class="badge-title">AI Pioneer</div>
+                            <div class="badge-desc">Complete all 12 AI & ML lessons</div>
                         </div>
 
                         <div class="badge-card" id="badge-html">
@@ -400,8 +411,12 @@
             const jsCompletedCount = jsProgress.completed_lessons ? jsProgress.completed_lessons.length : 0;
             document.getElementById('stat-javascript-completed').textContent = `${jsCompletedCount} / 13`;
             
+            const aiProgress = user.progress.ai || { completed_lessons: [], completed: false };
+            const aiCompletedCount = aiProgress.completed_lessons ? aiProgress.completed_lessons.length : 0;
+            document.getElementById('stat-ai-completed').textContent = `${aiCompletedCount} / 12`;
+            
             // 100 XP per completed lesson across all courses
-            const totalCompleted = pyCompletedCount + cvCompletedCount + ardCompletedCount + dvCompletedCount + jsCompletedCount;
+            const totalCompleted = pyCompletedCount + cvCompletedCount + ardCompletedCount + dvCompletedCount + jsCompletedCount + aiCompletedCount;
             const xp = totalCompleted * 100;
             document.getElementById('stat-xp').textContent = `${xp} XP`;
 
@@ -425,6 +440,10 @@
             }
             if (jsProgress.completed) {
                 document.getElementById('badge-javascript').classList.add('earned');
+                badgesCount++;
+            }
+            if (aiProgress.completed) {
+                document.getElementById('badge-ai').classList.add('earned');
                 badgesCount++;
             }
             document.getElementById('stat-badges-earned').textContent = badgesCount;
