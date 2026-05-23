@@ -191,6 +191,32 @@ document.addEventListener('DOMContentLoaded', () => {
     // UI Events
     document.getElementById('run-btn').addEventListener('click', runCode);
     
+    // Dock Toggles
+    const dock = document.getElementById('output-dock');
+    const overlay = document.getElementById('dock-overlay');
+    
+    const openDock = () => {
+        if (dock && overlay) {
+            dock.classList.add('open');
+            overlay.classList.add('open');
+        }
+    };
+    
+    const closeDock = () => {
+        if (dock && overlay) {
+            dock.classList.remove('open');
+            overlay.classList.remove('open');
+        }
+    };
+
+    const toggleBtn = document.getElementById('toggle-dock-btn');
+    if (toggleBtn) toggleBtn.addEventListener('click', openDock);
+    
+    const closeBtn = document.getElementById('close-dock-btn');
+    if (closeBtn) closeBtn.addEventListener('click', closeDock);
+    
+    if (overlay) overlay.addEventListener('click', closeDock);
+    
     document.getElementById('prev-btn').addEventListener('click', () => {
         if (currentLessonIndex > 0) {
             currentLessonIndex--;
@@ -278,6 +304,14 @@ async function runCode() {
     const code = editor.getValue();
     const consoleEl = document.getElementById('output-console');
     const viewport = document.getElementById('dom-viewport');
+    
+    // Auto-open dock when code runs
+    const dock = document.getElementById('output-dock');
+    const overlay = document.getElementById('dock-overlay');
+    if (dock && overlay) {
+        dock.classList.add('open');
+        overlay.classList.add('open');
+    }
     
     consoleEl.textContent = 'Running...\n';
     userLogs = [];

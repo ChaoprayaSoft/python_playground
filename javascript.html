@@ -18,11 +18,6 @@
         }
     </script>
     <style>
-        .output-wrapper {
-            display: flex;
-            flex-direction: column;
-            flex: 1;
-        }
         .dom-viewport {
             flex: 1;
             background: #fff;
@@ -41,9 +36,53 @@
             flex: 1;
             min-height: 150px;
         }
+        
+        /* Floating Dock Styles */
+        .output-dock {
+            position: fixed;
+            top: 0;
+            right: -450px; /* Hidden by default */
+            width: 450px;
+            height: 100vh;
+            background: var(--bg-color);
+            border-left: 1px solid var(--panel-border);
+            z-index: 1000;
+            transition: right 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: -5px 0 25px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+        }
+        .output-dock.open {
+            right: 0;
+        }
+        .dock-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+        }
+        .dock-overlay.open {
+            opacity: 1;
+            pointer-events: auto;
+        }
+        
+        /* Ensure editor takes full height */
+        .editor-wrapper {
+            flex: 1 !important;
+            height: 100%;
+        }
     </style>
 </head>
 <body>
+    <!-- Overlay for dock -->
+    <div id="dock-overlay" class="dock-overlay"></div>
+
     <div class="app-container">
         <!-- Header -->
         <header class="glass-panel header">
@@ -97,40 +136,46 @@
                 </div>
             </section>
 
-            <!-- Right Panel: Editor & Output -->
+            <!-- Right Panel: Editor -->
             <section class="editor-panel">
                 <!-- Editor Wrapper -->
                 <div class="glass-panel editor-wrapper">
                     <div class="panel-header">
                         <div class="tab active">script.js</div>
-                        <button class="btn btn-run" id="run-btn">
-                            <span class="run-icon">▶</span> Run Code
-                        </button>
+                        <div style="margin-left: auto; display: flex; gap: 0.5rem;">
+                            <button class="btn btn-outline" id="toggle-dock-btn" style="padding: 0.4rem 0.8rem;">
+                                👁️ View Output
+                            </button>
+                            <button class="btn btn-run" id="run-btn">
+                                <span class="run-icon">▶</span> Run Code
+                            </button>
+                        </div>
                     </div>
                     <div class="editor-container">
                         <textarea id="code-editor"></textarea>
                     </div>
                 </div>
-
-                <!-- Output Wrapper -->
-                <div class="glass-panel output-wrapper">
-                    <div class="panel-header">
-                        <div class="tab active" style="margin-right: 1rem;">Web Preview</div>
-                        <div class="tab" style="opacity:0.6;">Console</div>
-                        <button class="btn btn-clear" id="clear-btn" style="margin-left: auto;">Clear</button>
-                    </div>
-                    
-                    <!-- Sandbox DOM Viewport -->
-                    <div id="dom-viewport" class="dom-viewport">
-                        <!-- User's script manipulates this area -->
-                    </div>
-                    
-                    <div class="terminal-container">
-                        <pre id="output-console" class="terminal-output">Ready to execute JavaScript...\n</pre>
-                    </div>
-                </div>
             </section>
         </main>
+    </div>
+
+    <!-- Floating Output Dock -->
+    <div id="output-dock" class="output-dock glass-panel" style="border-radius: 0;">
+        <div class="panel-header">
+            <div class="tab active" style="margin-right: 1rem;">Web Preview</div>
+            <div class="tab" style="opacity:0.6;">Console</div>
+            <button class="btn btn-clear" id="clear-btn" style="margin-left: auto;">Clear</button>
+            <button class="btn btn-outline" id="close-dock-btn" style="margin-left: 0.5rem; padding: 0.2rem 0.5rem; font-size: 1.2rem;">×</button>
+        </div>
+        
+        <!-- Sandbox DOM Viewport -->
+        <div id="dom-viewport" class="dom-viewport">
+            <!-- User's script manipulates this area -->
+        </div>
+        
+        <div class="terminal-container">
+            <pre id="output-console" class="terminal-output">Ready to execute JavaScript...\n</pre>
+        </div>
     </div>
 
     <!-- Scripts -->
