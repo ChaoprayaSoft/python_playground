@@ -519,9 +519,13 @@ function clearConsole() {
 
 // --- Visual Chart.js Controls ---
 function resetChartCanvas() {
-    if (currentChart) {
+    if (typeof currentChart !== 'undefined' && currentChart) {
         currentChart.destroy();
         currentChart = null;
+    }
+    if (window.currentCharts) {
+        window.currentCharts.forEach(c => c.destroy());
+        window.currentCharts = [];
     }
     
     dom.chartPlaceholder.classList.remove('hidden');
@@ -548,95 +552,119 @@ function renderVisualChart(plotData) {
     
     // Save state for validation
     simulationState.currentPlot = plotData;
+
+    let plotsToRender = [];
+    if (plotData.isSubplots) {
+        plotsToRender = plotData.subplots.filter(p => p.type !== null);
+    } else {
+        plotsToRender = [plotData];
+    }
     
     // Standard Heatmap Matrix render overrides Chart.js canvas
-    if (plotData.type === "heatmap") {
-        renderCustomHeatmap(plotData.data, plotData.title);
+    if (plotsToRender.length > 0 && plotsToRender[0].type === "heatmap") {
+        renderCustomHeatmap(plotsToRender[0].data, plotData.title || plotsToRender[0].title);
         return;
     }
     
     dom.chartWrapper.classList.remove('hidden');
-    const ctx = document.getElementById('chart-canvas').getContext('2d');
+    dom.chartWrapper.innerHTML = '';
     
-    let config = {
-        type: plotData.type === "boxplot" ? "bar" : plotData.type, // Map boxplot visual to bar bounds for simplicity
-        data: {
-            labels: plotData.labels || [],
-            datasets: plotData.datasets.map(ds => ({
-                label: ds.label || 'Data Variable',
-                data: ds.data,
-                backgroundColor: plotData.type === 'line' ? 'rgba(59, 130, 246, 0.15)' : [
-                    'rgba(59, 130, 246, 0.75)',
-                    'rgba(16, 185, 129, 0.75)',
-                    'rgba(236, 72, 153, 0.75)',
-                    'rgba(245, 158, 11, 0.75)',
-                    'rgba(139, 92, 246, 0.75)',
-                    'rgba(239, 68, 68, 0.75)'
-                ],
-                borderColor: '#3b82f6',
-                borderWidth: plotData.type === 'line' ? 3 : 1,
-                tension: 0.4,
-                pointBackgroundColor: '#fff',
-                pointBorderColor: '#3b82f6',
-                pointRadius: (plotData.type === 'line' || plotData.type === 'scatter') ? 5 : 0
-            }))
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                title: {
-                    display: true,
-                    text: plotData.title || 'Data Science Analytics',
-                    color: '#fff',
-                    font: { family: 'Inter', size: 14, weight: 'bold' }
-                },
-                legend: {
-                    display: plotData.type === 'pie' || plotData.type === 'doughnut',
-                    labels: { color: '#94a3b8', font: { family: 'Inter' } }
-                }
+    window.currentCharts = window.currentCharts || [];
+    window.currentCharts.forEach(c => c.destroy());
+    window.currentCharts = [];
+    
+    plotsToRender.forEach((pData, idx) => {
+        let container = document.createElement('div');
+        container.style.flex = "1";
+        container.style.minWidth = "0";
+        container.style.height = "100%";
+        container.style.position = "relative";
+        
+        let canvas = document.createElement('canvas');
+        canvas.id = 'chart-canvas-' + idx;
+        container.appendChild(canvas);
+        
+        dom.chartWrapper.appendChild(container);
+        
+        const ctx = canvas.getContext('2d');
+        
+        let config = {
+            type: pData.type === "boxplot" ? "bar" : pData.type,
+            data: {
+                labels: pData.labels || [],
+                datasets: pData.datasets.map(ds => ({
+                    label: ds.label || 'Data Variable',
+                    data: ds.data,
+                    backgroundColor: pData.type === 'line' ? 'rgba(59, 130, 246, 0.15)' : [
+                        'rgba(59, 130, 246, 0.75)',
+                        'rgba(16, 185, 129, 0.75)',
+                        'rgba(236, 72, 153, 0.75)',
+                        'rgba(245, 158, 11, 0.75)',
+                        'rgba(139, 92, 246, 0.75)',
+                        'rgba(239, 68, 68, 0.75)'
+                    ],
+                    borderColor: '#3b82f6',
+                    borderWidth: pData.type === 'line' ? 3 : 1,
+                    tension: 0.4,
+                    pointBackgroundColor: '#fff',
+                    pointBorderColor: '#3b82f6',
+                    pointRadius: (pData.type === 'line' || pData.type === 'scatter') ? 5 : 0
+                }))
             },
-            scales: plotData.type === 'pie' || plotData.type === 'doughnut' ? {} : {
-                x: {
-                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                    ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    title: {
+                        display: true,
+                        text: pData.title || (plotData.isSubplots && plotData.title ? plotData.title : 'Data Science Analytics'),
+                        color: '#fff',
+                        font: { family: 'Inter', size: 14, weight: 'bold' }
+                    },
+                    legend: {
+                        display: pData.type === 'pie' || pData.type === 'doughnut',
+                        labels: { color: '#94a3b8', font: { family: 'Inter' } }
+                    }
                 },
-                y: {
-                    grid: { color: 'rgba(255, 255, 255, 0.05)' },
-                    ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+                scales: pData.type === 'pie' || pData.type === 'doughnut' ? {} : {
+                    x: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+                    },
+                    y: {
+                        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+                        ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } }
+                    }
                 }
             }
+        };
+        
+        if (pData.type === "boxplot") {
+            config.data.labels = ["Min", "Q1", "Median", "Q3", "Max", "Outliers"];
+            config.data.datasets = [{
+                label: "Salary Ranges ($)",
+                data: [45000, 48000, 50000, 52000, 53000, 115000],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.5)',  
+                    'rgba(245, 158, 11, 0.5)', 
+                    'rgba(16, 185, 129, 0.6)', 
+                    'rgba(59, 130, 246, 0.5)',  
+                    'rgba(139, 92, 246, 0.5)', 
+                    'rgba(236, 72, 153, 0.8)'  
+                ],
+                borderColor: '#fff',
+                borderWidth: 1.5
+            }];
         }
-    };
-    
-    // Custom Boxplot rendering logic on top of simple Chart.js
-    if (plotData.type === "boxplot") {
-        // Mock a gorgeous distribution range chart (Minimum, Q1, Median, Q3, Maximum)
-        // salaries = [45000, 48000, 52000, 50000, 49000, 51000, 53000, 115000, 46000]
-        config.data.labels = ["Min", "Q1", "Median", "Q3", "Max", "Outliers"];
-        config.data.datasets = [{
-            label: "Salary Ranges ($)",
-            data: [45000, 48000, 50000, 52000, 53000, 115000],
-            backgroundColor: [
-                'rgba(239, 68, 68, 0.5)',  // Min
-                'rgba(245, 158, 11, 0.5)', // Q1
-                'rgba(16, 185, 129, 0.6)', // Median
-                'rgba(59, 130, 246, 0.5)',  // Q3
-                'rgba(139, 92, 246, 0.5)', // Max
-                'rgba(236, 72, 153, 0.8)'  // Outlier VP
-            ],
-            borderColor: '#fff',
-            borderWidth: 1.5
-        }];
-    }
-    
-    // Custom Scatter Plot configuration
-    if (plotData.type === "scatter") {
-        config.options.scales.x.type = 'linear';
-        config.options.scales.x.position = 'bottom';
-    }
-    
-    currentChart = new Chart(ctx, config);
+        
+        if (pData.type === "scatter") {
+            config.options.scales.x.type = 'linear';
+            config.options.scales.x.position = 'bottom';
+        }
+        
+        let chart = new Chart(ctx, config);
+        window.currentCharts.push(chart);
+    });
 }
 
 // Generate gorgeous 3x3 styled matrices for Seaborn correlation heatmaps
@@ -759,48 +787,73 @@ async function runPythonCode() {
             },
             
             // Matplotlib Emulation
+            getActivePlot: () => {
+                if (!sandbox.pltState.isSubplots) {
+                    return sandbox.pltState;
+                }
+                return sandbox.pltState.subplots[sandbox.pltState.activePlotIndex];
+            },
+            
             plt_bar: async (x, y, title = "") => {
-                sandbox.pltState.type = "bar";
-                sandbox.pltState.labels = x;
-                sandbox.pltState.datasets = [{ data: y }];
+                let p = sandbox.getActivePlot();
+                p.type = "bar";
+                p.labels = x;
+                p.datasets = [{ data: y }];
             },
             
             plt_plot: async (x, y, title = "") => {
-                sandbox.pltState.type = "line";
-                sandbox.pltState.labels = x;
-                sandbox.pltState.datasets = [{ data: y }];
+                let p = sandbox.getActivePlot();
+                p.type = "line";
+                p.labels = x;
+                p.datasets = [{ data: y }];
             },
             
             plt_pie: async (data, labels = null) => {
-                sandbox.pltState.type = "pie";
-                sandbox.pltState.labels = labels || data.map((d, i) => `Col ${i + 1}`);
-                sandbox.pltState.datasets = [{ data: data }];
+                let p = sandbox.getActivePlot();
+                p.type = "pie";
+                p.labels = labels || data.map((d, i) => `Col ${i + 1}`);
+                p.datasets = [{ data: data }];
             },
             
             plt_scatter: async (x, y) => {
-                sandbox.pltState.type = "scatter";
-                sandbox.pltState.datasets = [{
+                let p = sandbox.getActivePlot();
+                p.type = "scatter";
+                p.datasets = [{
                     data: x.map((xv, i) => ({ x: xv, y: y[i] }))
                 }];
             },
             
             plt_boxplot: async (data) => {
-                sandbox.pltState.type = "boxplot";
-                sandbox.pltState.data = data;
-                sandbox.pltState.datasets = [{ data: data }];
+                let p = sandbox.getActivePlot();
+                p.type = "boxplot";
+                p.data = data;
+                p.datasets = [{ data: data }];
             },
             
             sns_heatmap: async (matrix, annot = true) => {
-                sandbox.pltState.type = "heatmap";
-                sandbox.pltState.data = matrix;
+                let p = sandbox.getActivePlot();
+                p.type = "heatmap";
+                p.data = matrix;
             },
             
             plt_subplot: async (...args) => {
-                sandbox.pltState.subplots = sandbox.pltState.subplots || [];
-                sandbox.pltState.subplots.push(args);
+                sandbox.pltState.isSubplots = true;
+                const idx = args[2] - 1;
+                while (sandbox.pltState.subplots.length <= idx) {
+                    sandbox.pltState.subplots.push({
+                        type: null,
+                        labels: null,
+                        datasets: [],
+                        title: null,
+                        data: null
+                    });
+                }
+                sandbox.pltState.activePlotIndex = idx;
             },
             
             plt_title: async (titleText) => {
+                let p = sandbox.getActivePlot();
+                p.title = titleText;
                 sandbox.pltState.title = titleText;
             },
             
@@ -814,7 +867,10 @@ async function runPythonCode() {
                 labels: null,
                 datasets: [],
                 title: "Analytics Chart",
-                data: null
+                data: null,
+                isSubplots: false,
+                subplots: [],
+                activePlotIndex: 0
             }
         };
         
