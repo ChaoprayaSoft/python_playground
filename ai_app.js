@@ -68,7 +68,7 @@ const lessons = [
         example: "inputs = [1.0, 0.5]\nweights = [0.5, -0.5]\nbias = 0.1\nz = (inputs[0]*weights[0]) + (inputs[1]*weights[1]) + bias\nprint(z)",
         task: "Given `inputs = [2.0, 3.0]`, `weights = [0.8, 0.4]`, and `bias = -1.0`, calculate `z` (the weighted sum) and print it.",
         initialCode: "inputs = [2.0, 3.0]\nweights = [0.8, 0.4]\nbias = -1.0\n# calculate z and print\n",
-        expectedOutput: "1.8"
+        expectedOutput: ["1.8", "1.8000000000000003"]
     },
     {
         title: "Activation Functions",
@@ -394,9 +394,14 @@ function checkLessonCompletion() {
     
     // Normalize spaces and quotes to ensure robust validation for dictionaries, lists, etc.
     const normalizedOutput = currentOutput.trim().replace(/\s+/g, ' ').replace(/"/g, "'");
-    const normalizedExpected = lesson.expectedOutput.trim().replace(/\s+/g, ' ').replace(/"/g, "'");
+    
+    let expectedArray = Array.isArray(lesson.expectedOutput) ? lesson.expectedOutput : [lesson.expectedOutput];
+    let isMatch = expectedArray.some(expected => {
+        const normalizedExpected = expected.trim().replace(/\s+/g, ' ').replace(/"/g, "'");
+        return normalizedOutput === normalizedExpected;
+    });
 
-    if (normalizedOutput === normalizedExpected) {
+    if (isMatch) {
         dom.successMessage.classList.remove('hidden');
         dom.nextBtn.disabled = false;
         
