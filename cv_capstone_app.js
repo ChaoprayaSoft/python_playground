@@ -45,7 +45,7 @@ const lessons = [
         task: 'Load `image/frame1.png` and `image/frame2.png`, convert both to grayscale. Calculate the absolute difference between them. Apply a binary threshold with a limit of 25. Find the external contours using `cv2.findContours()`. Print `len(contours) > 0` to verify motion was detected.',
         initialCode: 'import cv2\nimport numpy as np\n# Load frame1.png and frame2.png, convert to gray, get absdiff, threshold, find contours, print if len(contours) > 0:\n',
         expectedOutput: ["True", "True\n"],
-        inputImage: "image/frame2.png",
+        inputImage: ["image/frame1.png", "image/frame2.png"],
         hint: "Use `diff = cv2.absdiff(gray1, gray2)`. `_, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)`. `contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)`. Print `len(contours) > 0`."
     },
     {
@@ -375,7 +375,37 @@ function loadLesson(index) {
         if (lesson.inputImage) {
             inputImgBtn.style.display = 'block';
             inputImgBtn.onclick = () => {
-                window.updateCanvasPreview('Input Image', lesson.inputImage);
+                if (Array.isArray(lesson.inputImage)) {
+                    const img1 = new Image();
+                    const img2 = new Image();
+                    let loaded = 0;
+                    const checkLoad = () => {
+                        loaded++;
+                        if (loaded === 2) {
+                            const popupCanvas = document.getElementById('preview-canvas-popup');
+                            const popupCtx = popupCanvas.getContext('2d');
+                            popupCanvas.width = img1.width + img2.width;
+                            popupCanvas.height = Math.max(img1.height, img2.height);
+                            
+                            // Fill background in case heights differ
+                            popupCtx.fillStyle = '#000000';
+                            popupCtx.fillRect(0, 0, popupCanvas.width, popupCanvas.height);
+                            
+                            popupCtx.drawImage(img1, 0, 0);
+                            popupCtx.drawImage(img2, img1.width, 0);
+                            
+                            document.getElementById('opencv-popup-title').textContent = 'Input Images (Frame 1 & Frame 2)';
+                            document.getElementById('opencv-popup-window').classList.add('show');
+                            window.hasImagePreview = true;
+                        }
+                    };
+                    img1.onload = checkLoad;
+                    img2.onload = checkLoad;
+                    img1.src = lesson.inputImage[0];
+                    img2.src = lesson.inputImage[1];
+                } else {
+                    window.updateCanvasPreview('Input Image', lesson.inputImage);
+                }
             };
         } else {
             inputImgBtn.style.display = 'none';

@@ -56,3 +56,32 @@ result = cv2.add(bg_part, fg)
 print(mask_inv[512, 512])
 
 cv2.imshow("Invisible Cloak", result)
+
+-------------------------------------------------------------
+Capstone 4: Motion Detection (Security Camera)
+import cv2
+import numpy as np
+
+# Load both frames
+img1 = cv2.imread("image/frame1.png")
+img2 = cv2.imread("image/frame2.png")
+
+# Convert both to grayscale
+gray1 = cv2.cvtColor(img1, cv2.COLOR_BGR2GRAY)
+gray2 = cv2.cvtColor(img2, cv2.COLOR_BGR2GRAY)
+
+# Calculate absolute difference
+diff = cv2.absdiff(gray1, gray2)
+
+# Apply a binary threshold
+_, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
+
+# Find external contours
+contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Print True if we found any motion contours!
+print(len(contours) > 0)
+
+# Optional: Draw the contours and preview the difference!
+cv2.drawContours(img2, contours, -1, (0, 255, 0), 2)
+cv2.imshow("Motion Detected", img2)
