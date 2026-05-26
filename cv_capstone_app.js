@@ -35,6 +35,30 @@ const lessons = [
         expectedOutput: ["255", "0"], // Allow either depending on the mock image data at the center. 
         inputImage: "image/cloak_fg.png",
         hint: "Use `mask = cv2.inRange(hsv, lower, upper)` then `mask_inv = cv2.bitwise_not(mask)`. `fg = cv2.bitwise_and(img, img, mask=mask_inv)`. `bg_part = cv2.bitwise_and(bg, bg, mask=mask)`. Print `mask_inv[512, 512]`."
+    },
+    {
+        title: "Capstone 4: Motion Detection",
+        difficulty: "Expert",
+        topic: "Security Camera",
+        concept: "To detect motion, you can compare two consecutive frames from a camera. By calculating the absolute difference `cv2.absdiff()` between them and thresholding the result, you can isolate the areas that changed. Finding contours on this thresholded image allows you to draw bounding boxes around the moving objects.",
+        example: 'import cv2\ndiff = cv2.absdiff(gray1, gray2)\n_, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)\ncontours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)',
+        task: 'Load `image/frame1.png` and `image/frame2.png`, convert both to grayscale. Calculate the absolute difference between them. Apply a binary threshold with a limit of 25. Find the external contours using `cv2.findContours()`. Print `len(contours) > 0` to verify motion was detected.',
+        initialCode: 'import cv2\nimport numpy as np\n# Load frame1.png and frame2.png, convert to gray, get absdiff, threshold, find contours, print if len(contours) > 0:\n',
+        expectedOutput: ["True", "True\n"],
+        inputImage: "image/frame2.png",
+        hint: "Use `diff = cv2.absdiff(gray1, gray2)`. `_, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)`. `contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)`. Print `len(contours) > 0`."
+    },
+    {
+        title: "Capstone 5: Object Tracking",
+        difficulty: "Expert",
+        topic: "Centroid Tracking",
+        concept: "Once you isolate an object using color masking, you can track its exact center using Image Moments. `cv2.moments(contour)` calculates the spatial moments of a shape, from which the center of mass (centroid) can be derived using the formulas `cx = int(M['m10']/M['m00'])` and `cy = int(M['m01']/M['m00'])`.",
+        example: "import cv2\nM = cv2.moments(contour)\ncx = int(M['m10']/M['m00'])\ncy = int(M['m01']/M['m00'])",
+        task: "Load `image/target.png`, convert to HSV. Create a mask for the blue ball (lower `[90, 150, 50]`, upper `[130, 255, 255]`). Find contours. Get the largest contour. Calculate the moments `M`. Calculate `cx` and `cy` and print them as `print(cx, cy)`. Finally, draw a white circle at `(cx, cy)` on the original image.",
+        initialCode: "import cv2\nimport numpy as np\n# Load target.png, convert HSV, mask blue color, find contours, get largest contour, calculate moments, print(cx, cy):\n",
+        expectedOutput: ["492 517", "492 517\n"],
+        inputImage: "image/target.png",
+        hint: "Mask the blue color, then use `contours, _ = cv2.findContours(...)`. `c = max(contours, key=cv2.contourArea)`. `M = cv2.moments(c)`. `cx = int(M['m10']/M['m00'])`, `cy = int(M['m01']/M['m00'])`. `print(cx, cy)`."
     }
 ];
 
@@ -141,7 +165,7 @@ async function init() {
 
                 try { pyodideInstance.FS.mkdir('image'); } catch (e) {}
 
-                let courseImages = ["face.png", "document.png", "cloak_bg.png", "cloak_fg.png"];
+                let courseImages = ["face.png", "document.png", "cloak_bg.png", "cloak_fg.png", "frame1.png", "frame2.png", "target.png"];
                 for (const imgName of courseImages) {
                     try {
                         const imgResponse = await fetch(`image/${imgName}`);

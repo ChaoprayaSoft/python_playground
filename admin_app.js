@@ -40,7 +40,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     const COURSE_TOTALS = {
         python: 13,
         opencv: 14,
-        cvcapstone: 3,
+        cvcapstone: 5,
         arduino: 10,
         datavis: 10,
         javascript: 13,

@@ -238,7 +238,7 @@
                     </div>
                     <div class="stat-card">
                         <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">CV Capstone Progress</div>
-                        <div class="stat-value" id="stat-cvcapstone-completed">0 / 3</div>
+                        <div class="stat-value" id="stat-cvcapstone-completed">0 / 5</div>
                     </div>
                     <div class="stat-card">
                         <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Arduino Progress</div>
@@ -288,7 +288,7 @@
                         <div class="badge-card" id="badge-cvcapstone">
                             <div class="badge-icon">👁️</div>
                             <div class="badge-title">CV Expert</div>
-                            <div class="badge-desc">Conquer all 3 Computer Vision Capstones</div>
+                            <div class="badge-desc">Conquer all 5 Computer Vision Capstones</div>
                         </div>
 
                         <!-- Arduino Badge -->
@@ -412,7 +412,7 @@
             
             const cvcapProgress = user.progress.cvcapstone || { completed_lessons: [], completed: false };
             const cvcapCompletedCount = cvcapProgress.completed_lessons ? cvcapProgress.completed_lessons.length : 0;
-            document.getElementById('stat-cvcapstone-completed').textContent = `${cvcapCompletedCount} / 3`;
+            document.getElementById('stat-cvcapstone-completed').textContent = `${cvcapCompletedCount} / 5`;
             
             const ardProgress = user.progress.arduino || { completed_lessons: [], completed: false };
             const ardCompletedCount = ardProgress.completed_lessons ? ardProgress.completed_lessons.length : 0;
