@@ -18,7 +18,7 @@ const lessons = [
         topic: "Perspective Transform",
         concept: "A document scanner takes a skewed image of a document and warps it to a top-down view. This requires finding the 4 corners of the document (usually via contours), defining 4 destination points (the corners of a flat rectangle), computing the perspective transform matrix using `cv2.getPerspectiveTransform(src_pts, dst_pts)`, and applying it with `cv2.warpPerspective(img, M, (width, height))`.",
         example: 'import cv2\nimport numpy as np\nM = cv2.getPerspectiveTransform(src, dst)\nwarped = cv2.warpPerspective(img, M, (300, 400))',
-        task: 'Load `image/document.png`. Define source points `src = np.float32([[200,300], [800,300], [100,900], [900,900]])` and destination points `dst = np.float32([[0,0], [300,0], [0,400], [300,400]])`. Calculate the perspective transform matrix `M`. Warp the image to size `(300, 400)`. Print the shape of the resulting warped image.',
+        task: "Load `image/document.png`. Define source points `src = np.float32([[81, 422], [459, 227], [609, 901], [956, 542]])` and destination points `dst = np.float32([[0,0], [300,0], [0,400], [300,400]])`. Calculate the perspective transform matrix `M`. Warp the image to size `(300, 400)`. Print the shape of the resulting warped image.",
         initialCode: 'import cv2\nimport numpy as np\n# Load image/document.png, define src and dst points, get matrix M, warp to (300, 400), print warped shape:\n',
         expectedOutput: ["(400, 300, 3)", "(400,300,3)"],
         inputImage: "image/document.png",
