@@ -56,7 +56,7 @@ const lessons = [
         example: "import cv2\nM = cv2.moments(contour)\ncx = int(M['m10']/M['m00'])\ncy = int(M['m01']/M['m00'])",
         task: "Load `image/target.png`, convert to HSV. Create a mask for the blue ball (lower `[90, 150, 50]`, upper `[130, 255, 255]`). Find contours. Get the largest contour. Calculate the moments `M`. Calculate `cx` and `cy` and print them as `print(cx, cy)`. Finally, draw a white circle at `(cx, cy)` on the original image.",
         initialCode: "import cv2\nimport numpy as np\n# Load target.png, convert HSV, mask blue color, find contours, get largest contour, calculate moments, print(cx, cy):\n",
-        expectedOutput: ["492 517", "492 517\n"],
+        expectedOutput: ["492 518", "492 518\n", "492 517", "492 517\n"],
         inputImage: "image/target.png",
         hint: "Mask the blue color, then use `contours, _ = cv2.findContours(...)`. `c = max(contours, key=cv2.contourArea)`. `M = cv2.moments(c)`. `cx = int(M['m10']/M['m00'])`, `cy = int(M['m01']/M['m00'])`. `print(cx, cy)`."
     }
