@@ -85,3 +85,39 @@ print(len(contours) > 0)
 # Optional: Draw the contours and preview the difference!
 cv2.drawContours(img2, contours, -1, (0, 255, 0), 2)
 cv2.imshow("Motion Detected", img2)
+
+-----------------------------------------
+Capstone 5: Object Tracking (Centroid)
+import cv2
+import numpy as np
+
+# Load the target image
+img = cv2.imread("image/target.png")
+
+# Convert to HSV color space
+hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+
+# Create a mask for the bright blue color
+lower = np.array([90, 150, 50])
+upper = np.array([130, 255, 255])
+mask = cv2.inRange(hsv, lower, upper)
+
+# Find contours on the mask
+contours, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+
+# Get the largest contour (the blue ball)
+c = max(contours, key=cv2.contourArea)
+
+# Calculate image moments
+M = cv2.moments(c)
+
+# Derive the exact center coordinates (cx, cy)
+cx = int(M['m10']/M['m00'])
+cy = int(M['m01']/M['m00'])
+
+# Print the coordinates to pass the lesson!
+print(cx, cy)
+
+# Draw a targeting circle at the centroid
+cv2.circle(img, (cx, cy), 15, (255, 255, 255), 4)
+cv2.imshow("Target Lock", img)
