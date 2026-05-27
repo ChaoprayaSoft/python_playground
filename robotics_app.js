@@ -8,6 +8,7 @@ const lessons = [
         concept: "Welcome to the PyPlay Robotics Simulator! Let's start with basic movement. The `robot` object allows you to control a differential drive robot.",
         example: "robot.move_forward(50)\nrobot.stop()",
         task: "Make the robot move forward by 100 units.",
+        hint: "Try passing 100 to the `robot.move_forward()` function!",
         initialCode: "import robot\n\n# Move the robot forward by 100 units\n",
         expectedOutput: "Robot moved forward by 100\n",
         simType: "diff-drive",
@@ -20,6 +21,7 @@ const lessons = [
         concept: "A differential drive robot turns by changing the speeds of its left and right wheels. We simplified this into a `turn(angle)` command.",
         example: "robot.turn(90)",
         task: "Move forward 50 units, turn right by 90 degrees, and move forward another 50 units.",
+        hint: "You will need three lines of code: move_forward(50), turn(90), and move_forward(50).",
         initialCode: "import robot\n\n# write your sequence here\n",
         expectedOutput: "Robot moved forward by 50\nRobot turned by 90 degrees\nRobot moved forward by 50\n",
         simType: "diff-drive",
@@ -32,6 +34,7 @@ const lessons = [
         concept: "Robots use sensors to perceive the world. Let's use `robot.get_distance()` to detect obstacles.",
         example: "dist = robot.get_distance()\nprint('Distance:', dist)",
         task: "Write a `while` loop that keeps moving forward by 10 units as long as the distance to the obstacle is greater than 20.",
+        hint: "The while loop should check `robot.get_distance() > 20`. Don't forget to call `robot.move_forward(10)` inside the loop!",
         initialCode: "import robot\n\nwhile robot.get_distance() > 20:\n    robot.move_forward(10)\n",
         expectedOutput: "",
         simType: "diff-drive-obstacle",
@@ -44,6 +47,7 @@ const lessons = [
         concept: "By reading sensors continuously, a robot can follow a wall. A simple proportional controller can help maintain a constant distance to the wall.",
         example: "error = target_distance - current_distance\nsteering = kp * error",
         task: "Just run the example code to see the robot follow the wall using a basic controller.",
+        hint: "No coding required here! Just click 'Run Code' to watch the pre-written controller in action.",
         initialCode: "import robot\n\nfor _ in range(50):\n    dist = robot.get_distance(sensor='left')\n    error = 30 - dist\n    robot.turn(error * 0.5)\n    robot.move_forward(5)\n",
         expectedOutput: "",
         simType: "wall-following",
@@ -58,6 +62,7 @@ const lessons = [
         concept: "Many pathfinding algorithms represent the world as a grid. Let's move the robot cell-by-cell in a grid environment.",
         example: "robot.grid_move('right')\nrobot.grid_move('down')",
         task: "Move the robot to the goal located at grid (3, 2). The robot starts at (0,0).",
+        hint: "Use the `robot.grid_move()` method. You will need to move 'right' three times and 'down' two times.",
         initialCode: "import robot\n\n# Move to (3, 2)\n",
         expectedOutput: "",
         simType: "grid",
@@ -70,6 +75,7 @@ const lessons = [
         concept: "If we don't know the map, we can randomly walk and avoid obstacles. Use `robot.is_free(direction)` to check.",
         example: "if robot.is_free('right'):\n    robot.grid_move('right')",
         task: "Use a loop to randomly move the robot until it reaches the goal. (Provided as an example)",
+        hint: "Run the provided code. It uses a random choice to eventually stumble upon the goal while avoiding obstacles.",
         initialCode: "import robot\nimport random\n\nwhile not robot.at_goal():\n    dirs = ['up', 'down', 'left', 'right']\n    d = random.choice(dirs)\n    if robot.is_free(d):\n        robot.grid_move(d)\n",
         expectedOutput: "",
         simType: "grid-maze",
@@ -82,6 +88,7 @@ const lessons = [
         concept: "BFS guarantees the shortest path in an unweighted grid. It explores all neighbors layer by layer.",
         example: "queue = [(start_x, start_y)]",
         task: "Execute the provided BFS pathfinding script and watch the grid simulation animate the path.",
+        hint: "Run the code and watch the pre-defined path trace through the maze.",
         initialCode: "import robot\n\n# A simple hardcoded path for the maze for demonstration\npath = ['right', 'right', 'down', 'down', 'right']\nfor p in path:\n    robot.grid_move(p)\n",
         expectedOutput: "",
         simType: "grid-maze",
@@ -96,6 +103,7 @@ const lessons = [
         concept: "A robotic arm is made of joints and links. By setting the angles of each joint, we control the position of the end-effector.",
         example: "arm.set_joints(45, -45)",
         task: "Set the base joint to 90 degrees and the elbow joint to 0 degrees.",
+        hint: "The base joint is the first parameter, and the elbow is the second: `arm.set_joints(90, 0)`.",
         initialCode: "import arm\n\narm.set_joints(90, 0)\n",
         expectedOutput: "",
         simType: "arm",
@@ -108,6 +116,7 @@ const lessons = [
         concept: "Robotic arms are often used to pick and place objects. You must sequence movements and gripper states.",
         example: "arm.open_gripper()\narm.close_gripper()",
         task: "Move to the object at (45, -45), close the gripper, move to (135, -45), and open the gripper.",
+        hint: "Make sure you move to the object's coordinates BEFORE closing the gripper, and wait until you reach the target to open it.",
         initialCode: "import arm\n\narm.open_gripper()\narm.set_joints(45, -45)\narm.close_gripper()\narm.set_joints(135, -45)\narm.open_gripper()\n",
         expectedOutput: "",
         simType: "arm",
@@ -120,6 +129,7 @@ const lessons = [
         concept: "Real robots don't jump instantly to joint angles; they move smoothly. Linear interpolation (Lerp) smooths the path.",
         example: "arm.move_smooth(90, 90, duration=2.0)",
         task: "Run the smooth movement command to watch the arm interpolate its path.",
+        hint: "Just click 'Run Code' to watch the arm interpolate smoothly between keyframes.",
         initialCode: "import arm\n\narm.move_smooth(90, 0, 1.0)\narm.move_smooth(45, -45, 1.0)\n",
         expectedOutput: "",
         simType: "arm",
@@ -150,11 +160,17 @@ const dom = {
     lessonConcept: document.getElementById('lesson-concept'),
     lessonExample: document.getElementById('lesson-example'),
     lessonTask: document.getElementById('lesson-task'),
+    lessonHint: document.getElementById('lesson-hint'),
+    hintBtn: document.getElementById('hint-btn'),
     successMessage: document.getElementById('success-message'),
     
     runBtn: document.getElementById('run-btn'),
     clearBtn: document.getElementById('clear-btn'),
     outputConsole: document.getElementById('output-console'),
+    
+    simDock: document.getElementById('sim-dock'),
+    toggleSimBtn: document.getElementById('toggle-sim-btn'),
+    closeSimBtn: document.getElementById('close-sim-btn')
 };
 
 let editor;
@@ -502,6 +518,11 @@ function loadLesson(index) {
     dom.lessonExample.textContent = lesson.example;
     dom.lessonTask.innerHTML = lesson.task.replace(/`([^`]+)`/g, '<code>$1</code>');
     
+    if (dom.lessonHint) {
+        dom.lessonHint.style.display = 'none';
+        dom.lessonHint.innerHTML = lesson.hint ? lesson.hint.replace(/`([^`]+)`/g, '<code>$1</code>') : "No hint available.";
+    }
+    
     editor.setValue(lesson.initialCode);
     dom.successMessage.classList.add('hidden');
     
@@ -599,6 +620,28 @@ function setupEventListeners() {
             loadLesson(currentLessonIndex);
         }
     });
+    
+    // Floating Dock Toggles
+    if (dom.toggleSimBtn) {
+        dom.toggleSimBtn.addEventListener('click', () => {
+            dom.simDock.classList.add('show');
+            drawSimulation(); // Ensure it redraws correctly when opened
+        });
+    }
+    if (dom.closeSimBtn) {
+        dom.closeSimBtn.addEventListener('click', () => {
+            dom.simDock.classList.remove('show');
+        });
+    }
+    
+    if (dom.hintBtn) {
+        dom.hintBtn.addEventListener('click', () => {
+            if (dom.lessonHint) {
+                dom.lessonHint.style.display = dom.lessonHint.style.display === 'none' ? 'block' : 'none';
+            }
+        });
+    }
+    
     document.addEventListener('keydown', (e) => {
         if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') runCode();
     });

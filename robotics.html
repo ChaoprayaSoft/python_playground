@@ -19,16 +19,26 @@
     </script>
     <style>
         .simulation-wrapper {
+            display: none;
+            position: fixed;
+            bottom: 40px;
+            right: 40px;
+            width: 540px;
+            z-index: 1000;
+            background: #1e1e2e;
+            padding: 15px;
+            border-radius: 12px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1);
+            animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .simulation-wrapper.show {
             display: flex;
             flex-direction: column;
             align-items: center;
-            justify-content: center;
-            background: #1e1e2e;
-            padding: 10px;
-            overflow: hidden;
-            margin-bottom: 1rem;
-            flex: 1;
-            min-height: 250px;
+        }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
         }
         canvas#sim-canvas {
             background: #282a36;
@@ -42,6 +52,7 @@
             flex-direction: column;
             gap: 1rem;
             flex: 1.2;
+            height: 100%;
         }
     </style>
 </head>
@@ -89,8 +100,13 @@
                     </div>
 
                     <div class="lesson-section task-section">
-                        <h3>🎯 Your Task</h3>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <h3>🎯 Your Task</h3>
+                            <button class="btn btn-outline" id="hint-btn" style="padding: 0.2rem 0.6rem; font-size: 0.8rem;">💡 Hint</button>
+                        </div>
                         <p id="lesson-task"></p>
+                        <div id="lesson-hint" style="display: none; margin-top: 10px; padding: 10px; background: rgba(255, 255, 255, 0.05); border-left: 3px solid #f1fa8c; border-radius: 4px; font-size: 0.85rem; color: #f1fa8c;">
+                        </div>
                     </div>
                     
                     <div id="success-message" class="success-message hidden">
@@ -102,22 +118,28 @@
             <!-- Right Panel: Editor, Simulation & Output -->
             <section class="right-panel">
                 
-                <!-- Simulation Wrapper -->
-                <div class="glass-panel simulation-wrapper">
-                    <div class="panel-header" style="width: 100%; border-bottom: 1px solid var(--panel-border); margin-bottom: 10px; padding-bottom: 10px;">
+                <!-- Simulation Wrapper (Floating Dock) -->
+                <div class="glass-panel simulation-wrapper" id="sim-dock">
+                    <div class="panel-header" style="width: 100%; border-bottom: 1px solid var(--panel-border); margin-bottom: 10px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
                         <div class="tab">Simulation View</div>
+                        <button class="btn btn-clear" id="close-sim-btn" style="padding: 0.2rem 0.5rem; font-size: 1rem;">✖</button>
                     </div>
                     <canvas id="sim-canvas" width="500" height="300"></canvas>
                 </div>
 
-                <div style="display: flex; gap: 1rem; flex: 1.5; min-height: 0;">
+                <div style="display: flex; flex-direction: column; gap: 1rem; flex: 1; min-height: 0;">
                     <!-- Editor Wrapper -->
-                    <div class="glass-panel editor-wrapper" style="flex: 1; display: flex; flex-direction: column;">
-                        <div class="panel-header">
+                    <div class="glass-panel editor-wrapper" style="flex: 1.5; display: flex; flex-direction: column;">
+                        <div class="panel-header" style="display: flex; justify-content: space-between;">
                             <div class="tab active">robot_logic.py</div>
-                            <button class="btn btn-run" id="run-btn" disabled>
-                                <span class="run-icon">▶</span> Run Simulation
-                            </button>
+                            <div style="display: flex; gap: 0.5rem;">
+                                <button class="btn btn-outline" id="toggle-sim-btn">
+                                    👁️ Show Simulation
+                                </button>
+                                <button class="btn btn-run" id="run-btn" disabled>
+                                    <span class="run-icon">▶</span> Run Code
+                                </button>
+                            </div>
                         </div>
                         <div class="editor-container" style="flex: 1; position: relative;">
                             <textarea id="code-editor"></textarea>
@@ -125,7 +147,7 @@
                     </div>
 
                     <!-- Output Wrapper -->
-                    <div class="glass-panel output-wrapper" style="flex: 0.8; display: flex; flex-direction: column;">
+                    <div class="glass-panel output-wrapper" style="flex: 1; display: flex; flex-direction: column;">
                         <div class="panel-header">
                             <div class="tab">Console Output</div>
                             <button class="btn btn-clear" id="clear-btn">Clear</button>
@@ -145,6 +167,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/codemirror/5.65.13/addon/edit/closebrackets.min.js"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.24.1/full/pyodide.js"></script>
     <script src="auth.js"></script>
-    <script src="robotics_app.js?v=2"></script>
+    <script src="robotics_app.js?v=3"></script>
 </body>
 </html>
