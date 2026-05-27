@@ -85,7 +85,7 @@ const lessons = [
         title: "Breadth-First Search (BFS)",
         difficulty: "Expert",
         topic: "Pathfinding Algorithms",
-        concept: "BFS guarantees the shortest path in an unweighted grid. It explores all neighbors layer by layer.",
+        concept: "Breadth-First Search (BFS) is a fundamental pathfinding algorithm used by robots to navigate mazes. It guarantees the shortest path in an unweighted grid by exploring all possible moves 'layer by layer'.<br><br>Imagine pouring water at the starting point—it flows outwards in all directions equally. The algorithm uses a <strong>Queue</strong> (First-In, First-Out) to keep track of which grid cells to check next, and a <strong>Visited Set</strong> to remember where it has already been. When it finally reaches the goal, the path it took is mathematically guaranteed to be the shortest route!",
         example: "queue = [(start_x, start_y)]",
         task: "Execute the provided BFS pathfinding script and watch the grid simulation animate the path.",
         hint: "Run the code and watch the pre-defined path trace through the maze.",
