@@ -480,7 +480,7 @@ function renderProgressSteps() {
     for (let i = 0; i < lessons.length; i++) {
         const pill = document.createElement('div');
         pill.className = 'progress-step-pill';
-        pill.setAttribute('data-tooltip', \`\${i + 1}. \${lessons[i].title}\`);
+        pill.setAttribute('data-tooltip', `${i + 1}. ${lessons[i].title}`);
         
         if (i === currentLessonIndex) pill.classList.add('active');
         else if (i <= highestLessonIndex) {
@@ -498,9 +498,9 @@ function loadLesson(index) {
     dom.lessonTitle.textContent = lesson.title;
     dom.lessonDifficulty.textContent = lesson.difficulty;
     dom.lessonTopic.textContent = lesson.topic;
-    dom.lessonConcept.innerHTML = lesson.concept.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
+    dom.lessonConcept.innerHTML = lesson.concept.replace(/`([^`]+)`/g, '<code>$1</code>');
     dom.lessonExample.textContent = lesson.example;
-    dom.lessonTask.innerHTML = lesson.task.replace(/\`([^\`]+)\`/g, '<code>$1</code>');
+    dom.lessonTask.innerHTML = lesson.task.replace(/`([^`]+)`/g, '<code>$1</code>');
     
     editor.setValue(lesson.initialCode);
     dom.successMessage.classList.add('hidden');
