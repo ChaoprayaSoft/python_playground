@@ -86,7 +86,7 @@ const lessons = [
         difficulty: "Expert",
         topic: "Pathfinding Algorithms",
         concept: "Breadth-First Search (BFS) is a fundamental pathfinding algorithm used by robots to navigate mazes. It guarantees the shortest path in an unweighted grid by exploring all possible moves 'layer by layer'.<br><br>Imagine pouring water at the starting point—it flows outwards in all directions equally. The algorithm uses a <strong>Queue</strong> (First-In, First-Out) to keep track of which grid cells to check next, and a <strong>Visited Set</strong> to remember where it has already been. When it finally reaches the goal, the path it took is mathematically guaranteed to be the shortest route!",
-        example: "queue = [(start_x, start_y)]",
+        example: "queue = [start]\nvisited = set([start])\n\nwhile queue:\n    curr = queue.pop(0) # Get oldest\n    if curr == goal:\n        break\n    for neighbor in get_neighbors(curr):\n        if neighbor not in visited:\n            visited.add(neighbor)\n            queue.append(neighbor)",
         task: "Execute the provided BFS pathfinding script and watch the grid simulation animate the path.",
         hint: "Run the code and watch the pre-defined path trace through the maze.",
         initialCode: "import robot\n\n# A simple hardcoded path for the maze for demonstration\npath = ['down', 'down', 'down', 'right', 'right', 'right', 'up']\nfor p in path:\n    robot.grid_move(p)\n",
