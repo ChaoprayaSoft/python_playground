@@ -102,22 +102,22 @@ const lessons = [
         topic: "Robotic Arms",
         concept: "A robotic arm is made of joints and links. By setting the angles of each joint, we control the position of the end-effector.",
         example: "arm.set_joints(45, -45)",
-        task: "Set the base joint to 90 degrees and the elbow joint to 0 degrees.",
-        hint: "The base joint is the first parameter, and the elbow is the second: `arm.set_joints(90, 0)`.",
-        initialCode: "import arm\n\narm.set_joints(90, 0)\n",
+        task: "Find the exact joint angles (Base and Elbow) needed to reach the target dot.",
+        hint: "Try different values! The base joint should be between 0 and 90. The elbow joint should be between 0 and 180.",
+        initialCode: "import arm\n\n# Try changing these angles to hit the target\narm.set_joints(0, 0)\n",
         expectedOutput: "",
         simType: "arm",
-        validate: (simState) => simState.joint1 === 90 && simState.joint2 === 0
+        validate: (simState) => simState.joint1 === 45 && simState.joint2 === 90
     },
     {
         title: "Pick and Place",
         difficulty: "Expert",
         topic: "Robotic Arms",
         concept: "Robotic arms are often used to pick and place objects. You must sequence movements and gripper states.",
-        example: "arm.open_gripper()\narm.close_gripper()",
-        task: "Move to the object at (45, -45), close the gripper, move to (135, -45), and open the gripper.",
-        hint: "Make sure you move to the object's coordinates BEFORE closing the gripper, and wait until you reach the target to open it.",
-        initialCode: "import arm\n\narm.open_gripper()\narm.set_joints(45, -45)\narm.close_gripper()\narm.set_joints(135, -45)\narm.open_gripper()\n",
+        example: "arm.open_gripper()\narm.set_joints(90, 0)\narm.close_gripper()",
+        task: "Write a script that moves to the object at (30, -60), picks it up, moves to (150, -60), and releases it.",
+        hint: "Make sure you move to the object BEFORE closing the gripper, and wait until you reach the target to open it.",
+        initialCode: "import arm\n\n# 1. Open gripper\n# 2. Move to object (30, -60)\n# 3. Close gripper\n# 4. Move to target (150, -60)\n# 5. Open gripper\n\n",
         expectedOutput: "",
         simType: "arm",
         validate: (simState) => simState.objectDroppedAtTarget
@@ -126,14 +126,14 @@ const lessons = [
         title: "Trajectory Interpolation",
         difficulty: "Expert",
         topic: "Robotic Arms",
-        concept: "Real robots don't jump instantly to joint angles; they move smoothly. Linear interpolation (Lerp) smooths the path.",
-        example: "arm.move_smooth(90, 90, duration=2.0)",
-        task: "Run the smooth movement command to watch the arm interpolate its path.",
-        hint: "Just click 'Run Code' to watch the arm interpolate smoothly between keyframes.",
-        initialCode: "import arm\n\narm.move_smooth(90, 0, 1.0)\narm.move_smooth(45, -45, 1.0)\n",
+        concept: "Real robots don't jump instantly to joint angles; they move smoothly in small steps. You can use a `for` loop to generate intermediate joint angles (a trajectory) between a start and an end point.",
+        example: "for angle in range(0, 50, 10):\n    arm.set_joints(angle, 0)",
+        task: "Write a loop that sweeps the base joint from 0 to 90 degrees in steps of 10 degrees, while keeping the elbow joint at 0.",
+        hint: "Use Python's `range(0, 100, 10)` in a `for` loop and call `arm.set_joints(angle, 0)` inside it.",
+        initialCode: "import arm\n\n# Write a loop to move base joint from 0 to 90 in steps of 10\n",
         expectedOutput: "",
         simType: "arm",
-        validate: (simState) => simState.steps >= 2
+        validate: (simState) => simState.steps >= 9 && simState.joint1 === 90 && simState.joint2 === 0
     }
 ];
 
@@ -196,7 +196,7 @@ function resetSimulation() {
     } else if (lesson.simType.startsWith('grid')) {
         defaultState = { gridX: 0, gridY: 0, atGoal: false };
     } else if (lesson.simType.startsWith('arm')) {
-        defaultState = { joint1: 0, joint2: 0, gripperClosed: false, objectDroppedAtTarget: false, steps: 0 };
+        defaultState = { joint1: 0, joint2: 0, gripperClosed: false, hasObject: false, objectDroppedAtTarget: false, steps: 0 };
     }
     logicState = JSON.parse(JSON.stringify(defaultState));
     simState = JSON.parse(JSON.stringify(defaultState));
@@ -301,18 +301,27 @@ function drawArm() {
         y: elbow.y - len2 * Math.sin(a2)
     };
     
-    // Draw target for pick and place
+    // Draw target for Forward Kinematics (Lesson 8)
+    if (lessons[currentLessonIndex].title === "The Robotic Arm (Forward Kinematics)") {
+        const targetX = base.x + len1 * Math.cos(45*Math.PI/180) + len2 * Math.cos(135*Math.PI/180);
+        const targetY = base.y - len1 * Math.sin(45*Math.PI/180) - len2 * Math.sin(135*Math.PI/180);
+        ctx.fillStyle = (simState.joint1 === 45 && simState.joint2 === 90) ? '#50fa7b' : '#ffb86c';
+        ctx.beginPath(); ctx.arc(targetX, targetY, 8, 0, Math.PI*2); ctx.fill();
+    }
+
+    // Draw target for pick and place (Lesson 9)
     if (lessons[currentLessonIndex].title === "Pick and Place") {
+        const dropX = base.x + len1 * Math.cos(150*Math.PI/180) + len2 * Math.cos(90*Math.PI/180);
+        const dropY = base.y - len1 * Math.sin(150*Math.PI/180) - len2 * Math.sin(90*Math.PI/180);
         ctx.fillStyle = simState.objectDroppedAtTarget ? '#50fa7b' : '#ffb86c';
-        ctx.fillRect(350, 150, 20, 20); // target zone
+        ctx.fillRect(dropX-10, dropY-10, 20, 20); // target zone
         
-        if(!simState.gripperClosed && !simState.objectDroppedAtTarget) {
+        if(!simState.hasObject && !simState.objectDroppedAtTarget) {
             ctx.fillStyle = '#ff79c6';
-            // Assuming object is initially at (45, -45) kinematic position
-            const objX = base.x + len1 * Math.cos(45*Math.PI/180) + len2 * Math.cos(0);
-            const objY = base.y - len1 * Math.sin(45*Math.PI/180) - len2 * Math.sin(0);
+            const objX = base.x + len1 * Math.cos(30*Math.PI/180) + len2 * Math.cos(-30*Math.PI/180);
+            const objY = base.y - len1 * Math.sin(30*Math.PI/180) - len2 * Math.sin(-30*Math.PI/180);
             ctx.fillRect(objX-5, objY-5, 10, 10);
-        } else if (simState.gripperClosed) {
+        } else if (simState.hasObject && !simState.objectDroppedAtTarget) {
             ctx.fillStyle = '#ff79c6';
             ctx.fillRect(end.x-5, end.y-5, 10, 10);
         }
@@ -416,16 +425,19 @@ window.js_sim_arm_joints = function(j1, j2) {
     logicState.joint1 = j1;
     logicState.joint2 = j2;
     logicState.steps++;
-    
-    if (lessons[currentLessonIndex].title === "Pick and Place") {
-        if (j1 === 135 && j2 === -45 && logicState.gripperClosed) {
-            logicState.objectDroppedAtTarget = true;
-        }
-    }
     pushAnimationState();
 };
 window.js_sim_arm_gripper = function(closed) {
     logicState.gripperClosed = closed;
+    
+    if (lessons[currentLessonIndex].title === "Pick and Place") {
+        if (closed && logicState.joint1 === 30 && logicState.joint2 === -60) {
+            logicState.hasObject = true;
+        } else if (!closed && logicState.joint1 === 150 && logicState.joint2 === -60 && logicState.hasObject) {
+            logicState.objectDroppedAtTarget = true;
+            logicState.hasObject = false;
+        }
+    }
     pushAnimationState();
 };
 
@@ -434,8 +446,10 @@ async function playAnimationQueue() {
     for (let i = 0; i < animationQueue.length; i++) {
         simState = animationQueue[i];
         drawSimulation();
-        // Delay 100ms per step
-        await new Promise(r => setTimeout(r, 100));
+        // Delay 100ms per step, slower for arm to see movement
+        let delay = 100;
+        if (lessons[currentLessonIndex].simType.startsWith('arm')) delay = 500;
+        await new Promise(r => setTimeout(r, delay));
     }
     isAnimating = false;
     animationQueue = [];
