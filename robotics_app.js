@@ -169,6 +169,7 @@ const dom = {
     outputConsole: document.getElementById('output-console'),
     
     simDock: document.getElementById('sim-dock'),
+    simDockHeader: document.getElementById('sim-dock-header'),
     toggleSimBtn: document.getElementById('toggle-sim-btn'),
     closeSimBtn: document.getElementById('close-sim-btn')
 };
@@ -631,6 +632,51 @@ function setupEventListeners() {
     if (dom.closeSimBtn) {
         dom.closeSimBtn.addEventListener('click', () => {
             dom.simDock.classList.remove('show');
+        });
+    }
+
+    // Drag Logic
+    if (dom.simDock && dom.simDockHeader) {
+        let isDragging = false;
+        let initialX;
+        let initialY;
+
+        dom.simDockHeader.addEventListener("mousedown", (e) => {
+            if (e.target.id === 'close-sim-btn') return;
+            
+            const rect = dom.simDock.getBoundingClientRect();
+            // Clear fixed bottom/right so top/left take over
+            dom.simDock.style.bottom = 'auto';
+            dom.simDock.style.right = 'auto';
+            dom.simDock.style.left = rect.left + 'px';
+            dom.simDock.style.top = rect.top + 'px';
+            dom.simDock.style.margin = '0';
+            
+            initialX = e.clientX;
+            initialY = e.clientY;
+            
+            isDragging = true;
+            dom.simDockHeader.style.cursor = "grabbing";
+        });
+
+        document.addEventListener("mousemove", (e) => {
+            if (isDragging) {
+                e.preventDefault();
+                const dx = e.clientX - initialX;
+                const dy = e.clientY - initialY;
+                
+                initialX = e.clientX;
+                initialY = e.clientY;
+                
+                const rect = dom.simDock.getBoundingClientRect();
+                dom.simDock.style.left = (rect.left + dx) + 'px';
+                dom.simDock.style.top = (rect.top + dy) + 'px';
+            }
+        });
+
+        document.addEventListener("mouseup", () => {
+            isDragging = false;
+            dom.simDockHeader.style.cursor = "move";
         });
     }
     

@@ -120,9 +120,9 @@
                 
                 <!-- Simulation Wrapper (Floating Dock) -->
                 <div class="glass-panel simulation-wrapper" id="sim-dock">
-                    <div class="panel-header" style="width: 100%; border-bottom: 1px solid var(--panel-border); margin-bottom: 10px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center;">
+                    <div class="panel-header" id="sim-dock-header" style="width: 100%; border-bottom: 1px solid var(--panel-border); margin-bottom: 10px; padding-bottom: 10px; display: flex; justify-content: space-between; align-items: center; cursor: move; user-select: none;">
                         <div class="tab">Simulation View</div>
-                        <button class="btn btn-clear" id="close-sim-btn" style="padding: 0.2rem 0.5rem; font-size: 1rem;">✖</button>
+                        <button class="btn btn-clear" id="close-sim-btn" style="padding: 0.2rem 0.5rem; font-size: 1rem; cursor: pointer;">✖</button>
                     </div>
                     <canvas id="sim-canvas" width="500" height="300"></canvas>
                 </div>
