@@ -18,10 +18,10 @@ print(len(df))",
         datasetName: "dirty_sales.csv",
         dataset: [
             { Order: "101", Product: "Mouse", Price: 25, Qty: 2 },
-            { Order: "102", Product: "Keyboard", Price: None, Qty: 1 },
+            { Order: "102", Product: "Keyboard", Price: null, Qty: 1 },
             { Order: "103", Product: "Monitor", Price: 150, Qty: 0 },
             { Order: "104", Product: "Headset", Price: 45, Qty: 3 },
-            { Order: "105", Product: "Webcam", Price: None, Qty: 5 }
+            { Order: "105", Product: "Webcam", Price: null, Qty: 5 }
         ],
         hint: "Use `df.dropna(subset=['Price'])` to remove nulls. Then `df = df[df['Qty'] >= 1]`. Then print `len(df)`.",
         validate: (state, logs) => {
@@ -649,6 +649,17 @@ function transpilePythonCode(pyCode) {
     code = code.replace(/\bFalse\b/g, 'false');
     code = code.replace(/\bNone\b/g, 'null');
     
+    // Support boolean filters: df = df[df['Qty'] >= 1] -> df = df.filter('Qty', '>=', 1)
+    code = code.replace(/(\w+)\s*\[\s*\1\s*\[\s*['"]([^'"]+)['"]\s*\]\s*([><=!]+)\s*(.+?)\s*\]/g, '$1.filter("$2", "$3", $4)');
+    code = code.replace(/(\w+)\s*\[\s*\1\s*\.(\w+)\s*([><=!]+)\s*(.+?)\s*\]/g, '$1.filter("$2", "$3", $4)');
+    
+    // Support columns math calculations: df['Revenue'] = df['Price'] * df['Qty'] or df['Revenue'] = df.Price * df.Qty
+    code = code.replace(/(\w+)\s*\[\s*['"]([^'"]+)['"]\s*\]\s*=\s*\1\s*(?:\[\s*['"]([^'"]+)['"]\s*\]|\.(\w+))\s*([\+\-\*\/])\s*\1\s*(?:\[\s*['"]([^'"]+)['"]\s*\]|\.(\w+))/g, (match, dfName, targetCol, colA1, colA2, op, colB1, colB2) => {
+        const a = colA1 || colA2;
+        const b = colB1 || colB2;
+        return `${dfName}.calculateColumn("${targetCol}", "${a}", "${op}", "${b}")`;
+    });
+
     // 4. Translate variable assignments to global var declarations
     // Matches expressions like: "df = pd.read_csv('sales.csv')" or "avg_price = df['Price'].mean()"
     // Avoid double var declaring and skip within functions
@@ -857,6 +868,60 @@ async function runPythonCode() {
                     }
                 };
             }
+
+            get length() {
+                return this.data.length;
+            }
+
+            dropna(options) {
+                let subset = options && options.subset ? options.subset : [];
+                let filteredData = this.data.filter(row => {
+                    for (let col of subset) {
+                        if (row[col] === null || row[col] === undefined) {
+                            return false;
+                        }
+                    }
+                    return true;
+                });
+                return createDataFrameProxy(new DataFrame(filteredData, this.name));
+            }
+
+            filter(colName, operator, value) {
+                let filteredData = this.data.filter(row => {
+                    let val = row[colName];
+                    let compareVal = Number(value);
+                    if (isNaN(compareVal)) {
+                        compareVal = value;
+                    }
+                    let rowVal = Number(val);
+                    if (isNaN(rowVal)) {
+                        rowVal = val;
+                    }
+                    if (operator === '>=') return rowVal >= compareVal;
+                    if (operator === '<=') return rowVal <= compareVal;
+                    if (operator === '>') return rowVal > compareVal;
+                    if (operator === '<') return rowVal < compareVal;
+                    if (operator === '==') return rowVal == compareVal;
+                    if (operator === '!=') return rowVal != compareVal;
+                    return true;
+                });
+                return createDataFrameProxy(new DataFrame(filteredData, this.name));
+            }
+
+            calculateColumn(targetCol, colA, op, colB) {
+                this.data.forEach(row => {
+                    let valA = Number(row[colA]) || 0;
+                    let valB = Number(row[colB]) || 0;
+                    if (op === '*') row[targetCol] = valA * valB;
+                    else if (op === '+') row[targetCol] = valA + valB;
+                    else if (op === '-') row[targetCol] = valA - valB;
+                    else if (op === '/') row[targetCol] = valA / (valB || 1);
+                });
+                if (!this.columns.includes(targetCol)) {
+                    this.columns.push(targetCol);
+                }
+                return this;
+            }
         }
         
         // Helper Grouped DataFrame class
@@ -876,11 +941,21 @@ async function runPythonCode() {
                 });
                 return {
                     sum: () => {
-                        let str = `Category Grouped sums by ${colName}:\n`;
-                        Object.keys(groups).forEach(g => {
-                            str += `${g.padEnd(15)} ${groups[g]}\n`;
-                        });
-                        return str;
+                        return {
+                            index: {
+                                tolist: () => Object.keys(groups),
+                                toList: () => Object.keys(groups)
+                            },
+                            tolist: () => Object.values(groups),
+                            toList: () => Object.values(groups),
+                            toString: () => {
+                                let str = `Category Grouped sums by ${colName}:\n`;
+                                Object.keys(groups).forEach(g => {
+                                    str += `${g.padEnd(15)} ${groups[g]}\n`;
+                                });
+                                return str;
+                            }
+                        };
                     }
                 };
             }

@@ -15,10 +15,10 @@ new_lessons = '''const lessons = [
         datasetName: "dirty_sales.csv",
         dataset: [
             { Order: "101", Product: "Mouse", Price: 25, Qty: 2 },
-            { Order: "102", Product: "Keyboard", Price: None, Qty: 1 },
+            { Order: "102", Product: "Keyboard", Price: null, Qty: 1 },
             { Order: "103", Product: "Monitor", Price: 150, Qty: 0 },
             { Order: "104", Product: "Headset", Price: 45, Qty: 3 },
-            { Order: "105", Product: "Webcam", Price: None, Qty: 5 }
+            { Order: "105", Product: "Webcam", Price: null, Qty: 5 }
         ],
         hint: "Use `df.dropna(subset=['Price'])` to remove nulls. Then `df = df[df['Qty'] >= 1]`. Then print `len(df)`.",
         validate: (state, logs) => {
