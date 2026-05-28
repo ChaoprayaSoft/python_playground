@@ -248,6 +248,10 @@
                         <div class="stat-value" id="stat-datavis-completed">0 / 10</div>
                     </div>
                     <div class="stat-card">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Data Capstone Progress</div>
+                        <div class="stat-value" id="stat-dataviscapstone-completed">0 / 6</div>
+                    </div>
+                    <div class="stat-card">
                         <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">JS Progress</div>
                         <div class="stat-value" id="stat-javascript-completed">0 / 13</div>
                     </div>
@@ -306,6 +310,13 @@
                             <div class="badge-icon">📊</div>
                             <div class="badge-title">Data Analyst</div>
                             <div class="badge-desc">Complete all 10 Python Data Visualization lessons</div>
+                        </div>
+
+                        <!-- Data Capstone Badge -->
+                        <div class="badge-card" id="badge-dataviscapstone">
+                            <div class="badge-icon">📈</div>
+                            <div class="badge-title">Data Capstone Master</div>
+                            <div class="badge-desc">Conquer all 6 Data Analytic Capstones</div>
                         </div>
                         
                         <!-- JS Badge -->
@@ -428,6 +439,10 @@
             const dvCompletedCount = dvProgress.completed_lessons ? dvProgress.completed_lessons.length : 0;
             document.getElementById('stat-datavis-completed').textContent = `${dvCompletedCount} / 10`;
             
+            const dvcapProgress = user.progress.dataviscapstone || { completed_lessons: [], completed: false };
+            const dvcapCompletedCount = dvcapProgress.completed_lessons ? dvcapProgress.completed_lessons.length : 0;
+            document.getElementById('stat-dataviscapstone-completed').textContent = `${dvcapCompletedCount} / 6`;
+            
             const jsProgress = user.progress.javascript || { completed_lessons: [], completed: false };
             const jsCompletedCount = jsProgress.completed_lessons ? jsProgress.completed_lessons.length : 0;
             document.getElementById('stat-javascript-completed').textContent = `${jsCompletedCount} / 13`;
@@ -441,7 +456,7 @@
             document.getElementById('stat-robotics-completed').textContent = `${robCompletedCount} / 10`;
             
             // 100 XP per completed lesson across all courses
-            const totalCompleted = pyCompletedCount + cvCompletedCount + cvcapCompletedCount + ardCompletedCount + dvCompletedCount + jsCompletedCount + aiCompletedCount + robCompletedCount;
+            const totalCompleted = pyCompletedCount + cvCompletedCount + cvcapCompletedCount + ardCompletedCount + dvCompletedCount + dvcapCompletedCount + jsCompletedCount + aiCompletedCount + robCompletedCount;
             const xp = totalCompleted * 100;
             document.getElementById('stat-xp').textContent = `${xp} XP`;
 
@@ -465,6 +480,10 @@
             }
             if (dvProgress.completed) {
                 document.getElementById('badge-datavis').classList.add('earned');
+                badgesCount++;
+            }
+            if (dvcapProgress.completed) {
+                document.getElementById('badge-dataviscapstone').classList.add('earned');
                 badgesCount++;
             }
             if (jsProgress.completed) {

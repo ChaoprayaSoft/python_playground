@@ -43,6 +43,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         cvcapstone: 5,
         arduino: 10,
         datavis: 10,
+        dataviscapstone: 6,
         javascript: 13,
         ai: 12,
         robotics: 10
@@ -54,6 +55,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         cvcapstone: '👁️',
         arduino: '🤖',
         datavis: '📊',
+        dataviscapstone: '📈',
         javascript: '🟨',
         ai: '🧠',
         robotics: '🦾'
@@ -179,7 +181,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             const progress = user.progress || {};
 
             // Build Progress Bars
-            const progressHtml = ['python', 'opencv', 'cvcapstone', 'arduino', 'datavis', 'javascript', 'ai', 'robotics'].map(courseId => {
+            const progressHtml = ['python', 'opencv', 'cvcapstone', 'arduino', 'datavis', 'dataviscapstone', 'javascript', 'ai', 'robotics'].map(courseId => {
                 const p = progress[courseId];
                 const total = COURSE_TOTALS[courseId];
                 const completedCount = p && p.completed_lessons ? p.completed_lessons.length : 0;
@@ -187,9 +189,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                 const isCompleted = p && p.completed;
                 const fillClass = isCompleted ? 'course-progress-fill completed' : 'course-progress-fill';
                 
+                let label = courseId.substring(0,2).toUpperCase();
+                if (courseId === 'cvcapstone') label = 'CVC';
+                if (courseId === 'dataviscapstone') label = 'DVC';
+
                 return `
                     <div title="${courseId.toUpperCase()}: ${completedCount}/${total}" style="display:inline-block; text-align:center; margin-right:4px;">
-                        <div style="font-size:0.6rem; color:var(--text-muted);">${courseId.substring(0,2).toUpperCase()}</div>
+                        <div style="font-size:0.6rem; color:var(--text-muted);">${label}</div>
                         <div class="course-progress-bar">
                             <div class="${fillClass}" style="width: ${percent}%;"></div>
                         </div>
