@@ -438,6 +438,13 @@ const PyPlayAuth = {
         await this.logToSheets(this.user.email, this.user.name, `Updated profile: Avatar ${avatar}, Color ${color}`);
     },
 
+    getProgress(courseId) {
+        if (!this.user || !this.user.progress || !this.user.progress[courseId]) {
+            return { completed_lessons: [], completed: false, highest_lesson: 0 };
+        }
+        return this.user.progress[courseId];
+    },
+
     async updateProgress(courseId, lessonIndex, isCompleted) {
         if (!this.user) return;
 

@@ -689,9 +689,11 @@ async function runPythonCode() {
     clearConsole();
     resetChartCanvas();
     
+    // Convert Python-like syntax to valid Javascript
+    let jsCode = transpilePythonCode(pyCode);
+    console.log("TRANSPILED CODE:", jsCode);
+    
     try {
-        const transpiled = transpilePythonCode(pyCode);
-        
         // Load active lesson dataset context
         const currentData = lessons[currentLessonIndex].dataset;
         
@@ -873,8 +875,14 @@ async function runPythonCode() {
                 return this.data.length;
             }
 
-            dropna(options) {
-                let subset = options && options.subset ? options.subset : [];
+            dropna(options, inplace) {
+                let subset = [];
+                if (Array.isArray(options)) {
+                    subset = options;
+                } else if (options && options.subset) {
+                    subset = options.subset;
+                }
+                
                 let filteredData = this.data.filter(row => {
                     for (let col of subset) {
                         if (row[col] === null || row[col] === undefined) {
@@ -883,10 +891,16 @@ async function runPythonCode() {
                     }
                     return true;
                 });
+                
+                if (inplace || (options && options.inplace)) {
+                    this.data = filteredData;
+                    return null;
+                }
                 return createDataFrameProxy(new DataFrame(filteredData, this.name));
             }
 
             filter(colName, operator, value) {
+                console.log(`FILTERING colName=${colName} operator=${operator} value=${value}`);
                 let filteredData = this.data.filter(row => {
                     let val = row[colName];
                     let compareVal = Number(value);
@@ -897,14 +911,17 @@ async function runPythonCode() {
                     if (isNaN(rowVal)) {
                         rowVal = val;
                     }
-                    if (operator === '>=') return rowVal >= compareVal;
-                    if (operator === '<=') return rowVal <= compareVal;
-                    if (operator === '>') return rowVal > compareVal;
-                    if (operator === '<') return rowVal < compareVal;
-                    if (operator === '==') return rowVal == compareVal;
-                    if (operator === '!=') return rowVal != compareVal;
-                    return true;
+                    let res = true;
+                    if (operator === '>=') res = rowVal >= compareVal;
+                    else if (operator === '<=') res = rowVal <= compareVal;
+                    else if (operator === '>') res = rowVal > compareVal;
+                    else if (operator === '<') res = rowVal < compareVal;
+                    else if (operator === '==') res = rowVal == compareVal;
+                    else if (operator === '!=') res = rowVal != compareVal;
+                    console.log(`  row ${JSON.stringify(row)} val=${val} compareVal=${compareVal} res=${res}`);
+                    return res;
                 });
+                console.log(`  Filtered data length: ${filteredData.length}`);
                 return createDataFrameProxy(new DataFrame(filteredData, this.name));
             }
 
@@ -986,7 +1003,7 @@ async function runPythonCode() {
         const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
         const runner = new AsyncFunction('sandbox', `
             with (sandbox) {
-                ${transpiled}
+                ${jsCode}
             }
         `);
         
