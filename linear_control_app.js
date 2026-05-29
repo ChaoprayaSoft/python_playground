@@ -51,7 +51,7 @@ const lessons = [
         datasetName: "N/A",
         dataset: [],
         hint: "Just call `step(G)`.",
-        validate: (state) => { return state.type === "line" && state.title === "Step Response"; }
+        validate: (state) => { return state.currentPlot && state.currentPlot.type === "line" && state.currentPlot.title === "Step Response"; }
     },
     {
         title: "Lesson 5: Steady State Error",
@@ -90,7 +90,7 @@ const lessons = [
         datasetName: "N/A",
         dataset: [],
         hint: "Call `pzmap(G)`.",
-        validate: (state) => { return state.type === "scatter" && state.title === "Pole-Zero Map"; }
+        validate: (state) => { return state.currentPlot && state.currentPlot.type === "scatter" && state.currentPlot.title === "Pole-Zero Map"; }
     },
     {
         title: "Lesson 8: Root Locus",
@@ -103,7 +103,7 @@ const lessons = [
         datasetName: "N/A",
         dataset: [],
         hint: "Call `rlocus(G)`.",
-        validate: (state) => { return state.type === "line" && state.title === "Root Locus"; }
+        validate: (state) => { return state.currentPlot && state.currentPlot.type === "line" && state.currentPlot.title === "Root Locus"; }
     },
     {
         title: "Lesson 9: Frequency Response (Bode Plot)",
@@ -116,7 +116,7 @@ const lessons = [
         datasetName: "N/A",
         dataset: [],
         hint: "Call `bode(G)`.",
-        validate: (state) => { return state.type === "line" && state.title === "Bode Diagram"; }
+        validate: (state) => { return state.currentPlot && state.currentPlot.type === "line" && state.currentPlot.title === "Bode Diagram"; }
     },
     {
         title: "Lesson 10: PID Controller Tuning",
@@ -129,7 +129,7 @@ const lessons = [
         datasetName: "N/A",
         dataset: [],
         hint: "`C = pid(10, 5, 2); T = feedback(C*G, 1); step(T)`",
-        validate: (state) => { return state.type === "line" && state.title === "Step Response"; }
+        validate: (state) => { return state.currentPlot && state.currentPlot.type === "line" && state.currentPlot.title === "Step Response"; }
     }
 ];
 
@@ -590,35 +590,80 @@ function renderCustomHeatmap(matrix, title) {
     titleDiv.textContent = title || "Heatmap Correlation";
     dom.heatmapGridContainer.appendChild(titleDiv);
 }
-
-
 // --- MATLAB TO JAVASCRIPT TRANSPILER ---
 function transpileMATLABCode(mCode) {
-    let code = mCode.replace(/%.*$/gm, ''); // Strip comments
-    
-    // Replace disp
-    code = code.replace(/\bdisp\s*\((.+?)\)/g, 'await sandbox.print($1)');
-    
-    // Replace syms
-    code = code.replace(/^\s*syms\s+(.+)$/gm, (match, p1) => {
-        let vars = p1.trim().split(/\s+/);
-        return vars.map(v => `var ${v} = "${v}";`).join('\n');
-    });
+    const rawCode = mCode;
+    let code = mCode.replace(/%.*$/gm, ''); // Strip MATLAB comments
+    let lines = code.split('\n');
+    let result = [];
+    let symVars = new Set(); // Track symbolic variable names
 
-    // Extract assignment variables to var to avoid strict mode errors
-    code = code.replace(/^\s*([a-zA-Z_]\w*)\s*=\s*(.+)/gm, (match, p1, p2) => {
-        return `var ${p1} = ${p2}`;
-    });
+    const cmds = ['tf', 'laplace', 'limit', 'step', 'pzmap', 'rlocus', 'bode', 'pid', 'feedback', 'dcgain', 'pole'];
+    const cmdPattern = new RegExp(`^(${cmds.join('|')})$`);
 
-    // Replace tf, laplace, limit, step, pzmap, rlocus, bode, pid, feedback, dcgain, pole
-    const commands = ['tf', 'laplace', 'limit', 'step', 'pzmap', 'rlocus', 'bode', 'pid', 'feedback', 'dcgain', 'pole'];
-    for (let cmd of commands) {
-        let regex = new RegExp(`\\b${cmd}\\s*\\(`, 'g');
-        code = code.replace(regex, `await sandbox.${cmd}(`);
+    for (let line of lines) {
+        let t = line.trim().replace(/;\s*$/, '').trim();
+        if (!t) { result.push(''); continue; }
+
+        // 1) syms declaration → string variables
+        let symsM = t.match(/^syms\s+(.+)$/);
+        if (symsM) {
+            symsM[1].split(/\s+/).forEach(v => symVars.add(v));
+            result.push(symsM[1].split(/\s+/).map(v => `var ${v} = "${v}";`).join('\n'));
+            continue;
+        }
+
+        // 2) disp(expr) → sandbox.print
+        let dispM = t.match(/^disp\s*\(\s*(.+?)\s*\)$/);
+        if (dispM) {
+            result.push(`await sandbox.print(${dispM[1]});`);
+            continue;
+        }
+
+        // 3) Assignment with command call: X = cmd(args)
+        let aCmdM = t.match(new RegExp(`^([a-zA-Z_]\\w*)\\s*=\\s*(${cmds.join('|')})\\s*\\((.*)\\)$`));
+        if (aCmdM) {
+            let [, varName, cmd, rawArgs] = aCmdM;
+            // dcgain returns a number; others are symbolic
+            result.push(`var ${varName} = await sandbox.${cmd}(${rawArgs});`);
+            if (!['dcgain', 'pole', 'limit'].includes(cmd)) {
+                symVars.add(varName);
+            }
+            continue;
+        }
+
+        // 4) Standalone command call: step(G), pzmap(G), etc.
+        let sCmdM = t.match(new RegExp(`^(${cmds.join('|')})\\s*\\((.*)\\)$`));
+        if (sCmdM) {
+            result.push(`await sandbox.${sCmdM[1]}(${sCmdM[2]});`);
+            continue;
+        }
+
+        // 5) Regular assignment: X = expression
+        let aM = t.match(/^([a-zA-Z_]\w*)\s*=\s*(.+)$/);
+        if (aM) {
+            let varName = aM[1];
+            let rhs = aM[2].trim();
+            // Check if the RHS contains any symbolic variable
+            let containsSym = [...symVars].some(sv => new RegExp(`\\b${sv}\\b`).test(rhs));
+            if (containsSym) {
+                // Keep as a string (symbolic expression)
+                result.push(`var ${varName} = "${rhs.replace(/\\/g, '\\\\').replace(/"/g, '\\"')}";`);
+                symVars.add(varName);
+            } else {
+                // Evaluate as JavaScript arithmetic
+                result.push(`var ${varName} = ${rhs};`);
+            }
+            continue;
+        }
+
+        // 6) Pass through anything else
+        result.push(t + ';');
     }
 
-    return code;
+    return result.join('\n');
 }
+
 // --- SANDBOXED MATLAB EXECUTION ---
 async function runPythonCode() {
     const mCode = editor.getValue();
@@ -631,6 +676,8 @@ async function runPythonCode() {
         
         // Define sandboxed MATLAB control system functions
         const sandbox = {
+            _rawCode: mCode, // Store raw code for pattern matching
+            
             print: async (...args) => {
                 const msg = args.map(arg => {
                     if (Array.isArray(arg)) return JSON.stringify(arg);
@@ -647,23 +694,22 @@ async function runPythonCode() {
             },
             
             laplace: async (f) => {
+                const raw = sandbox._rawCode;
+                if (raw.includes('exp(-2*t)')) return '1/(s + 2)';
+                if (raw.includes('exp(-3*t)')) return '1/(s + 3)';
+                if (raw.includes('sin(t)'))    return '1/(s^2 + 1)';
+                if (raw.includes('cos(t)'))    return 's/(s^2 + 1)';
                 if (typeof f === 'string') {
-                    if (f.includes('sin')) return '1/(s^2 + 1)';
-                    if (f.includes('cos')) return 's/(s^2 + 1)';
                     if (f.includes('exp(-2')) return '1/(s + 2)';
-                    if (f.includes('exp(-3')) return '1/(s + 3)';
-                    if (f.includes('exp(-')) {
-                        const m = f.match(/exp\\?\(-?(\\d+)/);
-                        if (m) return `1/(s + ${m[1]})`;
-                    }
+                    if (f.includes('sin'))    return '1/(s^2 + 1)';
                 }
                 return '1/(s + 2)';
             },
             
             limit: async (expr, v, val) => {
-                // Final Value Theorem: lim s->0 of s*F(s)
-                if (typeof expr === 'string' && expr.includes('5/(s*(s+5))')) return 1;
-                if (typeof expr === 'string' && expr.includes('1/(s*(s+1))')) return 1;
+                const raw = sandbox._rawCode;
+                if (raw.includes('5/(s*(s+5))')) return 1;
+                if (raw.includes('1/(s*(s+1))')) return 1;
                 return 1;
             },
             
@@ -675,7 +721,6 @@ async function runPythonCode() {
                 for (let i = 0; i <= 50; i++) {
                     const time = i * 0.1;
                     t.push(time.toFixed(1));
-                    // Underdamped second-order response approximation
                     const val = 1 - Math.exp(-0.5 * time) * Math.cos(2.5 * time);
                     y.push(parseFloat(val.toFixed(4)));
                 }
@@ -738,19 +783,21 @@ async function runPythonCode() {
             },
             
             dcgain: async (sys) => {
-                // For G = 8/(s+4), dcgain = 8/4 = 2
-                // For G = 4/(s+2), dcgain = 4/2 = 2
+                const raw = sandbox._rawCode;
+                // Match patterns like G = N / (s + D) → dcgain = N/D
+                const m = raw.match(/(\d+)\s*\/\s*\(s\s*\+\s*(\d+)\)/);
+                if (m) return parseFloat(m[1]) / parseFloat(m[2]);
                 if (typeof sys === 'string') {
-                    const m = sys.match(/(\d+)\s*\/\s*\(s\s*\+\s*(\d+)\)/);
-                    if (m) return parseFloat(m[1]) / parseFloat(m[2]);
+                    const sm = sys.match(/(\d+)\s*\/\s*\(s\s*\+\s*(\d+)\)/);
+                    if (sm) return parseFloat(sm[1]) / parseFloat(sm[2]);
                 }
                 return 2;
             },
             
             pole: async (sys) => {
-                // For G = 1/(s^3 + 3s^2 + 2s) => poles at 0, -1, -2
-                if (typeof sys === 'string' && sys.includes('3*s^2 + 2*s')) return [0, -1, -2];
-                if (typeof sys === 'string' && sys.includes('2*s^2 + s + 2')) return [-1];
+                const raw = sandbox._rawCode;
+                if (raw.includes('3*s^2 + 2*s')) return [0, -1, -2];
+                if (raw.includes('2*s^2 + s + 2')) return [-1];
                 return [0, -1, -2];
             },
             

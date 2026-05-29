@@ -264,6 +264,10 @@
                         <div class="stat-value" id="stat-robotics-completed">0 / 10</div>
                     </div>
                     <div class="stat-card">
+                        <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Control Systems</div>
+                        <div class="stat-value" id="stat-linearcontrol-completed">0 / 10</div>
+                    </div>
+                    <div class="stat-card">
                         <div style="font-size:0.75rem; font-weight:600; text-transform:uppercase; color:var(--text-muted);">Total XP</div>
                         <div class="stat-value" id="stat-xp">0 XP</div>
                     </div>
@@ -452,7 +456,7 @@
             
             
             const lcProgress = user.progress.linearcontrol || { completed_lessons: [], completed: false };
-            const lcCompletedCount = lcProgress.completed_lessons.length;
+            const lcCompletedCount = lcProgress.completed_lessons ? lcProgress.completed_lessons.length : 0;
             document.getElementById('stat-linearcontrol-completed').textContent = `${lcCompletedCount} / 10`;
 
             const jsProgress = user.progress.javascript || { completed_lessons: [], completed: false };
@@ -468,7 +472,7 @@
             document.getElementById('stat-robotics-completed').textContent = `${robCompletedCount} / 10`;
             
             // 100 XP per completed lesson across all courses
-            const totalCompleted = pyCompletedCount + cvCompletedCount + cvcapCompletedCount + ardCompletedCount + dvCompletedCount + dvcapCompletedCount + jsCompletedCount + aiCompletedCount + robCompletedCount;
+            const totalCompleted = pyCompletedCount + cvCompletedCount + cvcapCompletedCount + ardCompletedCount + dvCompletedCount + dvcapCompletedCount + jsCompletedCount + aiCompletedCount + robCompletedCount + lcCompletedCount;
             const xp = totalCompleted * 100;
             document.getElementById('stat-xp').textContent = `${xp} XP`;
 
@@ -508,6 +512,10 @@
             }
             if (robProgress.completed) {
                 document.getElementById('badge-robotics').classList.add('earned');
+                badgesCount++;
+            }
+            if (lcProgress.completed) {
+                document.getElementById('badge-linearcontrol').classList.add('earned');
                 badgesCount++;
             }
             document.getElementById('stat-badges-earned').textContent = badgesCount;
