@@ -334,6 +334,13 @@
                         </div>
 
                         <!-- Robotics Badge -->
+                        
+                        <div class="badge-card" id="badge-linearcontrol">
+                            <div class="badge-icon" style="background: rgba(16, 185, 129, 0.15); color: #10b981; border: 2px solid rgba(16, 185, 129, 0.3);">🎛️</div>
+                            <h4 class="badge-title">CONTROL ENGINEER</h4>
+                            <p class="badge-desc">Finished Linear Control Systems Course</p>
+                        </div>
+    
                         <div class="badge-card" id="badge-robotics">
                             <div class="badge-icon">🦾</div>
                             <div class="badge-title">Robotics Engineer</div>
@@ -443,6 +450,11 @@
             const dvcapCompletedCount = dvcapProgress.completed_lessons ? dvcapProgress.completed_lessons.length : 0;
             document.getElementById('stat-dataviscapstone-completed').textContent = `${dvcapCompletedCount} / 6`;
             
+            
+            const lcProgress = user.progress.linearcontrol || { completed_lessons: [], completed: false };
+            const lcCompletedCount = lcProgress.completed_lessons.length;
+            document.getElementById('stat-linearcontrol-completed').textContent = `${lcCompletedCount} / 10`;
+
             const jsProgress = user.progress.javascript || { completed_lessons: [], completed: false };
             const jsCompletedCount = jsProgress.completed_lessons ? jsProgress.completed_lessons.length : 0;
             document.getElementById('stat-javascript-completed').textContent = `${jsCompletedCount} / 13`;

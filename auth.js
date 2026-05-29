@@ -348,7 +348,8 @@ const PyPlayAuth = {
                 dataviscapstone: { completed_lessons: [], completed: false },
                 javascript: { completed_lessons: [], completed: false },
                 ai: { completed_lessons: [], completed: false },
-                robotics: { completed_lessons: [], completed: false }
+                robotics: { completed_lessons: [], completed: false },
+                linearcontrol: { completed_lessons: [], completed: false }
             },
             lastUpdated: new Date().toISOString()
         };
@@ -469,7 +470,7 @@ const PyPlayAuth = {
         let totalLessons = 13;
         if (courseId === 'opencv') totalLessons = 14;
         else if (courseId === 'cvcapstone') totalLessons = 5;
-        else if (courseId === 'arduino' || courseId === 'datavis' || courseId === 'robotics') totalLessons = 10;
+        else if (courseId === 'arduino' || courseId === 'datavis' || courseId === 'robotics' || courseId === 'linearcontrol') totalLessons = 10;
         else if (courseId === 'dataviscapstone') totalLessons = 6;
         else if (courseId === 'ai') totalLessons = 12;
         
