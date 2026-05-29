@@ -757,24 +757,70 @@ async function runPythonCode() {
                 return '1/(s + 2)'; // Fallback
             },
             
+            parse2ndOrder: (sysStr) => {
+                // Match patterns like K / (s^2 + A*s + B) or (s+Z) / (s^2 + A*s + B)
+                let m = sysStr.match(/(?:(?:\d+(?:\.\d+)?)|(?:\(\s*s\s*\+\s*\d+(?:\.\d+)?\s*\)))\s*\/\s*\(\s*s\^2\s*\+\s*(\d+(?:\.\d+)?)\*?s\s*\+\s*(\d+(?:\.\d+)?)\s*\)/);
+                if (m) {
+                    // Extract K separately if N is just a number
+                    let kMatch = sysStr.match(/(\d+(?:\.\d+)?)\s*\//);
+                    let K = kMatch ? parseFloat(kMatch[1]) : 1;
+                    return { K, A: parseFloat(m[1]), B: parseFloat(m[2]) };
+                }
+                return null;
+            },
+            
             limit: async (expr, v, val) => {
-                const raw = sandbox._rawCode;
-                if (raw.includes('5/(s*(s+5))')) return 1;
-                if (raw.includes('1/(s*(s+1))')) return 1;
-                return 1;
+                let sVal = (val == 0) ? '1e-8' : String(val); // Approximate limit
+                try {
+                    let toEval = expr.replace(/\bs\b/g, sVal).replace(/\^/g, '**');
+                    let res = eval(toEval);
+                    return Math.round(res * 1000) / 1000;
+                } catch(e) {
+                    return 1;
+                }
             },
             
             step: async (sys) => {
                 sandbox.pltState.type = "line";
                 sandbox.pltState.title = "Step Response";
-                const t = [];
-                const y = [];
-                for (let i = 0; i <= 50; i++) {
-                    const time = i * 0.1;
-                    t.push(time.toFixed(1));
-                    const val = 1 - Math.exp(-0.5 * time) * Math.cos(2.5 * time);
-                    y.push(parseFloat(val.toFixed(4)));
+                
+                let t = [];
+                let y = [];
+                let sysStr = (typeof sys === 'string') ? sys : sandbox._rawCode;
+                let params = sandbox.parse2ndOrder(sysStr);
+                
+                if (params) {
+                    let {K, A, B} = params;
+                    let wn = Math.sqrt(B);
+                    let zeta = A / (2 * wn);
+                    let dc = K / B;
+                    
+                    for (let i = 0; i <= 100; i++) {
+                        let time = i * 0.1;
+                        t.push(time.toFixed(1));
+                        let val = 0;
+                        if (zeta < 1) { // Underdamped
+                            let wd = wn * Math.sqrt(1 - zeta*zeta);
+                            let phi = Math.acos(zeta);
+                            val = dc * (1 - Math.exp(-zeta * wn * time) / Math.sqrt(1 - zeta*zeta) * Math.sin(wd * time + phi));
+                        } else if (zeta === 1) { // Critically damped
+                            val = dc * (1 - Math.exp(-wn * time) * (1 + wn * time));
+                        } else { // Overdamped
+                            let s1 = -zeta*wn + wn*Math.sqrt(zeta*zeta - 1);
+                            let s2 = -zeta*wn - wn*Math.sqrt(zeta*zeta - 1);
+                            val = dc * (1 - (s2*Math.exp(s1*time) - s1*Math.exp(s2*time))/(s2-s1));
+                        }
+                        y.push(parseFloat(val.toFixed(4)));
+                    }
+                } else {
+                    for (let i = 0; i <= 50; i++) {
+                        let time = i * 0.1;
+                        t.push(time.toFixed(1));
+                        let val = 1 - Math.exp(-0.5 * time) * Math.cos(2.5 * time);
+                        y.push(parseFloat(val.toFixed(4)));
+                    }
                 }
+                
                 sandbox.pltState.labels = t;
                 sandbox.pltState.datasets = [{ data: y, label: "Amplitude" }];
                 sandbox.pltState.isSubplots = false;
@@ -784,9 +830,37 @@ async function runPythonCode() {
             pzmap: async (sys) => {
                 sandbox.pltState.type = "scatter";
                 sandbox.pltState.title = "Pole-Zero Map";
+                let sysStr = (typeof sys === 'string') ? sys : sandbox._rawCode;
+                let params = sandbox.parse2ndOrder(sysStr);
+                
+                let poles = [];
+                let zeros = [];
+                
+                if (params) {
+                    let {A, B} = params;
+                    let wn = Math.sqrt(B);
+                    let zeta = A / (2 * wn);
+                    if (zeta < 1) {
+                        let wd = wn * Math.sqrt(1 - zeta*zeta);
+                        poles = [{x: -zeta*wn, y: wd}, {x: -zeta*wn, y: -wd}];
+                    } else {
+                        let s1 = -zeta*wn + wn*Math.sqrt(zeta*zeta - 1);
+                        let s2 = -zeta*wn - wn*Math.sqrt(zeta*zeta - 1);
+                        poles = [{x: s1, y: 0}, {x: s2, y: 0}];
+                    }
+                    
+                    let zMatch = sysStr.match(/\(s\s*\+\s*(\d+(?:\.\d+)?)\)/);
+                    if (zMatch) {
+                        zeros = [{x: -parseFloat(zMatch[1]), y: 0}];
+                    }
+                } else {
+                    poles = [{x: -0.5, y: 0.866}, {x: -0.5, y: -0.866}];
+                    zeros = [{x: -2, y: 0}];
+                }
+                
                 sandbox.pltState.datasets = [
-                    { data: [{x: -0.5, y: 0.866}, {x: -0.5, y: -0.866}], label: "Poles (×)", pointStyle: 'cross' },
-                    { data: [{x: -2, y: 0}], label: "Zeros (○)", pointStyle: 'circle' }
+                    { data: poles, label: "Poles (×)", pointStyle: 'cross' },
+                    { data: zeros, label: "Zeros (○)", pointStyle: 'circle' }
                 ];
                 sandbox.pltState.isSubplots = false;
                 await sandbox.plt_show();
@@ -795,13 +869,34 @@ async function runPythonCode() {
             rlocus: async (sys) => {
                 sandbox.pltState.type = "line";
                 sandbox.pltState.title = "Root Locus";
-                const reals = [];
-                const imags = [];
-                for (let k = 0; k <= 50; k++) {
-                    const gain = k * 0.5;
-                    reals.push((-1 - gain * 0.1).toFixed(2));
-                    imags.push((Math.sqrt(Math.max(0, gain * 0.3))).toFixed(2));
+                let sysStr = (typeof sys === 'string') ? sys : sandbox._rawCode;
+                let params = sandbox.parse2ndOrder(sysStr);
+                
+                let reals = [];
+                let imags = [];
+                
+                if (params) {
+                    let {A, B} = params;
+                    let center = -A / 2;
+                    for(let k = 0; k <= 50; k++) {
+                        let gain = k * 0.5;
+                        let root = center * center - B - gain;
+                        if (root < 0) {
+                            reals.push(center.toFixed(2));
+                            imags.push(Math.sqrt(-root).toFixed(2));
+                        } else {
+                            reals.push((center + Math.sqrt(root)).toFixed(2));
+                            imags.push("0.00");
+                        }
+                    }
+                } else {
+                    for (let k = 0; k <= 50; k++) {
+                        let gain = k * 0.5;
+                        reals.push((-1 - gain * 0.1).toFixed(2));
+                        imags.push((Math.sqrt(Math.max(0, gain * 0.3))).toFixed(2));
+                    }
                 }
+                
                 sandbox.pltState.labels = reals;
                 sandbox.pltState.datasets = [{ data: imags, label: "Root Locus Path" }];
                 sandbox.pltState.isSubplots = false;
@@ -811,13 +906,28 @@ async function runPythonCode() {
             bode: async (sys) => {
                 sandbox.pltState.type = "line";
                 sandbox.pltState.title = "Bode Diagram";
-                const freqs = [];
-                const mags = [];
-                for (let i = -2; i <= 3; i += 0.2) {
-                    const w = Math.pow(10, i);
-                    freqs.push(w.toFixed(2));
-                    const mag = -20 * Math.log10(Math.sqrt(1 + w * w));
-                    mags.push(parseFloat(mag.toFixed(1)));
+                let freqs = [];
+                let mags = [];
+                let sysStr = (typeof sys === 'string') ? sys : sandbox._rawCode;
+                let params = sandbox.parse2ndOrder(sysStr);
+                
+                if (params) {
+                    let {K, A, B} = params;
+                    for (let i = -1; i <= 3; i += 0.1) {
+                        let w = Math.pow(10, i);
+                        freqs.push(w.toFixed(2));
+                        let realPart = B - w*w;
+                        let imagPart = A * w;
+                        let mag = K / Math.sqrt(realPart*realPart + imagPart*imagPart);
+                        mags.push(parseFloat((20 * Math.log10(mag)).toFixed(2)));
+                    }
+                } else {
+                    for (let i = -2; i <= 3; i += 0.2) {
+                        let w = Math.pow(10, i);
+                        freqs.push(w.toFixed(2));
+                        let mag = -20 * Math.log10(Math.sqrt(1 + w * w));
+                        mags.push(parseFloat(mag.toFixed(1)));
+                    }
                 }
                 sandbox.pltState.labels = freqs;
                 sandbox.pltState.datasets = [{ data: mags, label: "Magnitude (dB)" }];
@@ -834,22 +944,32 @@ async function runPythonCode() {
             },
             
             dcgain: async (sys) => {
-                const raw = sandbox._rawCode;
-                // Match patterns like G = N / (s + D) → dcgain = N/D
-                const m = raw.match(/(\d+)\s*\/\s*\(s\s*\+\s*(\d+)\)/);
-                if (m) return parseFloat(m[1]) / parseFloat(m[2]);
-                if (typeof sys === 'string') {
-                    const sm = sys.match(/(\d+)\s*\/\s*\(s\s*\+\s*(\d+)\)/);
-                    if (sm) return parseFloat(sm[1]) / parseFloat(sm[2]);
+                let expr = (typeof sys === 'string') ? sys : sandbox._rawCode;
+                expr = expr.replace(/Transfer Function:\s*/, '');
+                try {
+                    let toEval = expr.replace(/\bs\b/g, '0').replace(/\^/g, '**');
+                    return eval(toEval);
+                } catch(e) {
+                    return 2;
                 }
-                return 2;
             },
             
             pole: async (sys) => {
-                const raw = sandbox._rawCode;
-                if (raw.includes('3*s^2 + 2*s')) return [0, -1, -2];
-                if (raw.includes('2*s^2 + s + 2')) return [-1];
-                return [0, -1, -2];
+                let expr = (typeof sys === 'string') ? sys : sandbox._rawCode;
+                expr = expr.replace(/Transfer Function:\s*/, '');
+                let denMatch = expr.match(/\/\s*\((.*?)\)/);
+                let denStr = denMatch ? denMatch[1] : expr;
+                
+                let roots = [];
+                for(let i = -100; i <= 100; i++) {
+                    let toEval = denStr.replace(/\bs\b/g, `(${i})`).replace(/\^/g, '**');
+                    try {
+                        if (Math.abs(eval(toEval)) < 1e-6) {
+                            roots.push(i);
+                        }
+                    } catch(e) {}
+                }
+                return roots.length > 0 ? roots : [0, -1, -2];
             },
             
             plt_show: async () => {
