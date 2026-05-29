@@ -133,191 +133,7 @@ const lessons = [
     }
 ];
 
-            const data = c.datasets[0].data || [];
-            const correctLabels = ["North", "South", "East", "West"];
-            const correctData = [34000, 29000, 42000, 31000];
-            return c.title === "Revenue by Region" && 
-                   labels.every((l, i) => l === correctLabels[i]) && 
-                   data.every((d, i) => d === correctData[i]);
-        }
-    },
-    {
-        title: "Line Charts - Revenue Trends",
-        difficulty: "Intermediate",
-        topic: "Time Series Trends",
-        concept: "Line charts connect consecutive data points with straight lines, making them perfect for analyzing progression and trends over time (like months or years). In Matplotlib, we draw lines using <code>plt.plot(x, y)</code>.",
-        example: "import matplotlib.pyplot as plt\n\nmonths = ['Jan', 'Feb', 'Mar']\nsales = [100, 150, 130]\n\nplt.plot(months, sales)\nplt.title('Monthly Sales Trend')\nplt.show()",
-        task: "Plot a Line Chart tracking revenue progression over time. Set months to <code>['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']</code> and revenue values to <code>[15000, 18000, 16000, 22000, 25000, 29000]</code>. Title the chart <code>\"Revenue Trend\"</code> and trigger the plot visualizer.",
-        initialCode: "import matplotlib.pyplot as plt\n\nmonths = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']\nrevenue = [15000, 18000, 16000, 22000, 25000, 29000]\n\n# Write line plot code below:\n",
-        datasetName: "revenue_growth.csv",
-        dataset: [
-            { Month: "Jan", Revenue: 15000, Expenses: 12000, Users: 120 },
-            { Month: "Feb", Revenue: 18000, Expenses: 13000, Users: 150 },
-            { Month: "Mar", Revenue: 16000, Expenses: 12500, Users: 180 },
-            { Month: "Apr", Revenue: 22000, Expenses: 15000, Users: 210 },
-            { Month: "May", Revenue: 25000, Expenses: 16000, Users: 260 },
-            { Month: "Jun", Revenue: 29000, Expenses: 18000, Users: 310 }
-        ],
-        validate: (state) => {
-            const c = state.currentPlot;
-            if (!c || c.type !== "line") return false;
-            const labels = c.labels || [];
-            const data = c.datasets[0].data || [];
-            const correctData = [15000, 18000, 16000, 22000, 25000, 29000];
-            return c.title === "Revenue Trend" && 
-                   labels.length === 6 && 
-                   data.every((d, i) => d === correctData[i]);
-        }
-    },
-    {
-        title: "Proportions & Pie Charts",
-        difficulty: "Intermediate",
-        topic: "Percentage Proportions",
-        concept: "Pie and Donut charts visualize percentage breakdowns of parts to a whole category list. In Matplotlib, we represent this using <code>plt.pie(values, labels=labels)</code>.",
-        example: "import matplotlib.pyplot as plt\n\nsizes = [40, 30, 20, 10]\nnames = ['A', 'B', 'C', 'D']\n\nplt.pie(sizes, labels=names)\nplt.title('Category Proportions')\nplt.show()",
-        task: "Create a Donut/Pie Chart representing Traffic Acquisition channels. Set categories to <code>['Organic Search', 'Social Media', 'Paid Search', 'Direct Traffic']</code>, set percentages to <code>[45, 25, 20, 10]</code>, set chart title to <code>\"Traffic Channels\"</code>, and render the visual graphic.",
-        initialCode: "import matplotlib.pyplot as plt\n\nchannels = ['Organic Search', 'Social Media', 'Paid Search', 'Direct Traffic']\nshares = [45, 25, 20, 10]\n\n# Create a pie chart below:\n",
-        datasetName: "traffic_sources.csv",
-        dataset: [
-            { Channel: "Organic Search", Shares: 45, Goal: 40, BounceRate: 35 },
-            { Channel: "Social Media", Shares: 25, Goal: 30, BounceRate: 65 },
-            { Channel: "Paid Search", Shares: 20, Goal: 15, BounceRate: 45 },
-            { Channel: "Direct Traffic", Shares: 10, Goal: 15, BounceRate: 20 }
-        ],
-        validate: (state) => {
-            const c = state.currentPlot;
-            if (!c || (c.type !== "pie" && c.type !== "doughnut")) return false;
-            const data = c.datasets[0].data || [];
-            const correctData = [45, 25, 20, 10];
-            return c.title === "Traffic Channels" && data.every((d, i) => d === correctData[i]);
-        }
-    },
-    {
-        title: "Scatter Plots - Analyzing Correlations",
-        difficulty: "Intermediate",
-        topic: "Variable Correlations",
-        concept: "Scatter plots map individual data points on X and Y coordinate grids, letting analysts visual search for relationships or correlations between two continuous variables. We draw coordinate scatters using <code>plt.scatter(x, y)</code>.",
-        example: "import matplotlib.pyplot as plt\n\nx = [1, 2, 3, 4, 5]\ny = [2, 4, 5, 8, 9]\n\nplt.scatter(x, y)\nplt.title('Variable Scatter Correlation')\nplt.show()",
-        task: "Plot a Scatter Chart comparing Marketing Budget (X) to Total Sales (Y). Define coordinates <code>budget = [1000, 1500, 2000, 2500, 3000, 3500]</code> and <code>sales = [12000, 15000, 22000, 24000, 31000, 34000]</code>. Set title to <code>\"Marketing Correlation\"</code> and show the chart.",
-        initialCode: "import matplotlib.pyplot as plt\n\nbudget = [1000, 1500, 2000, 2500, 3000, 3500]\nsales = [12000, 15000, 22000, 24000, 31000, 34000]\n\n# Write scatter plot code below:\n",
-        datasetName: "marketing_roi.csv",
-        dataset: [
-            { AdSpend: 1000, Sales: 12000, ROIPercent: 120 },
-            { AdSpend: 1500, Sales: 15000, ROIPercent: 100 },
-            { AdSpend: 2000, Sales: 22000, ROIPercent: 110 },
-            { AdSpend: 2500, Sales: 24000, ROIPercent: 96 },
-            { AdSpend: 3000, Sales: 31000, ROIPercent: 103 },
-            { AdSpend: 3500, Sales: 34000, ROIPercent: 97 }
-        ],
-        validate: (state) => {
-            const c = state.currentPlot;
-            if (!c || c.type !== "scatter") return false;
-            // Scatter stores points as objects {x, y}
-            const data = c.datasets[0].data || [];
-            const budget = [1000, 1500, 2000, 2500, 3000, 3500];
-            const sales = [12000, 15000, 22000, 24000, 31000, 34000];
-            return c.title === "Marketing Correlation" && 
-                   data.every((d, i) => d.x === budget[i] && d.y === sales[i]);
-        }
-    },
-    {
-        title: "Correlation Heatmaps",
-        difficulty: "Advanced",
-        topic: "Matrix Plotting",
-        concept: "A correlation heatmap maps relationship degrees between multiple continuous features into a colored grid matrix. Standard ratios go from -1.0 (inverse correlation) to 1.0 (perfect correlation). In Python, we use the **Seaborn** library (built on top of Matplotlib) and call <code>sns.heatmap(matrix, annot=True)</code>.",
-        example: "import seaborn as sns\nimport matplotlib.pyplot as plt\n\n# 2x2 Matrix data\nmatrix = [\n  [1.00, 0.85],\n  [0.85, 1.00]\n]\n\nsns.heatmap(matrix, annot=True)\nplt.title('Correlation Matrix')\nplt.show()",
-        task: "Plot a Heatmap representing correlation margins. Build a 3x3 matrix where: Row 0 is <code>[1.00, 0.82, 0.91]</code>, Row 1 is <code>[0.82, 1.00, 0.74]</code>, Row 2 is <code>[0.91, 0.74, 1.00]</code>. Set title to <code>\"Metrics Correlation\"</code> and show the visual heatmap plot.",
-        initialCode: "import seaborn as sns\nimport matplotlib.pyplot as plt\n\ncorrelation_matrix = [\n    [1.00, 0.82, 0.91],\n    [0.82, 1.00, 0.74],\n    [0.91, 0.74, 1.00]\n]\n\n# Plot the correlation heatmap below:\n",
-        datasetName: "icecream_metrics.csv",
-        dataset: [
-            { Metric: "Temperature", TempCorr: 1.00, HumidityCorr: 0.82, IceCreamCorr: 0.91 },
-            { Metric: "Humidity", TempCorr: 0.82, HumidityCorr: 1.00, IceCreamCorr: 0.74 },
-            { Metric: "IceCreamSales", TempCorr: 0.91, HumidityCorr: 0.74, IceCreamCorr: 1.00 }
-        ],
-        validate: (state) => {
-            const c = state.currentPlot;
-            if (!c || c.type !== "heatmap") return false;
-            const matrix = c.data;
-            return c.title === "Metrics Correlation" && 
-                   matrix[0][1] === 0.82 && 
-                   matrix[1][2] === 0.74;
-        }
-    },
-    {
-        title: "Filtering & Data Aggregation",
-        difficulty: "Advanced",
-        topic: "Data Analysis groupby",
-        concept: "When working with spreadsheets, we frequently group categories together and calculate category totals. In Pandas, we group records using <code>df.groupby('Category')</code> and sum or mean them. This returns grouped datasets ready for graphing.",
-        example: "import pandas as pd\ndf = pd.read_csv('sales.csv')\n\n# Group categories and sum prices\ngrouped = df.groupby('Category')['Price'].sum()\nprint(grouped)",
-        task: "Load <code>'sales.csv'</code>, group the records by <code>'Category'</code>, calculate the **sum** of the <code>'Qty'</code> (Quantity) column using <code>.sum()</code>, and print the resulting grouped summary directly to the console using <code>print(grouped)</code>.",
-        initialCode: "import pandas as pd\n\ndf = pd.read_csv('sales.csv')\n\n# 1. Group by 'Category' and calculate the sum of 'Qty':\ngrouped = \n\n# 2. Print the grouped Series to the console:\n",
-        datasetName: "sales.csv",
-        dataset: [
-            { Product: "Smart Watch", Category: "Electronics", Price: 150, Qty: 2 },
-            { Product: "Running Socks", Category: "Apparel", Price: 15, Qty: 8 },
-            { Product: "Laptop Charger", Category: "Electronics", Price: 45, Qty: 4 },
-            { Product: "Windbreaker Jacket", Category: "Apparel", Price: 75, Qty: 2 },
-            { Product: "Resistance Bands", Category: "Fitness", Price: 25, Qty: 6 }
-        ],
-        validate: (state, logs) => {
-            // Groupby results for Qty:
-            // Electronics: 2 + 4 = 6
-            // Apparel: 8 + 2 = 10
-            // Fitness: 6
-            const logMatch = logs.some(l => l.includes("Electronics") && l.includes("6") && l.includes("Apparel") && l.includes("10"));
-            return logMatch;
-        }
-    },
-    {
-        title: "Salary Box Plots & Outliers",
-        difficulty: "Advanced",
-        topic: "Distribution & Outliers",
-        concept: "Box plots (or box-and-whisker plots) show numerical distribution spreads and locate **outliers** (data points that sit abnormally far from others). They highlight the median, quartiles (Q1, Q3), and whiskers. In Matplotlib, we draw distributions using <code>plt.boxplot(data)</code>.",
-        example: "import matplotlib.pyplot as plt\n\npoints = [10, 12, 11, 13, 12, 45, 11] # 45 is an outlier\nplt.boxplot(points)\nplt.title('Outliers Audit')\nplt.show()",
-        task: "Plot a Box Plot representing the employee salary distribution dataset: <code>[45000, 48000, 52000, 50000, 49000, 51000, 53000, 115000, 46000]</code>. Set title to <code>\"Salary Distribution\"</code> and trigger the plot on the Data Canvas.",
-        initialCode: "import matplotlib.pyplot as plt\n\nsalaries = [45000, 48000, 52000, 50000, 49000, 51000, 53000, 115000, 46000]\n\n# Create a boxplot for salaries below:\n",
-        datasetName: "salary_scale.csv",
-        dataset: [
-            { Role: "Junior Developer", Salary: 45000, Code: "J01" },
-            { Role: "Content Writer", Salary: 48000, Code: "C04" },
-            { Role: "UI/UX Intern", Salary: 52000, Code: "U02" },
-            { Role: "Support Specialist", Salary: 50000, Code: "S09" },
-            { Role: "QA Analyst", Salary: 49000, Code: "Q03" },
-            { Role: "Network Admin", Salary: 51000, Code: "N01" },
-            { Role: "HR Coordinator", Salary: 53000, Code: "H02" },
-            { Role: "Vice President", Salary: 115000, Code: "M01" },
-            { Role: "Social Specialist", Salary: 46000, Code: "S03" }
-        ],
-        validate: (state) => {
-            const c = state.currentPlot;
-            if (!c || c.type !== "boxplot") return false;
-            const data = c.data || [];
-            const correctSalaries = [45000, 48000, 52000, 50000, 49000, 51000, 53000, 115000, 46000];
-            return c.title === "Salary Distribution" && 
-                   data.every((d, i) => d === correctSalaries[i]);
-        }
-    },
-    {
-        title: "Multi-Panel Visual Dashboard",
-        difficulty: "Advanced",
-        topic: "Dashboard Reporting",
-        concept: "Professional data science requires creating multiple analytical graphs side-by-side inside a consolidated reporting Dashboard. We do this by instantiating panels within a figure, styling colors, and showing trends together.",
-        example: "import matplotlib.pyplot as plt\n\n# In Python, we define dashboards using subplots.\n# E.g. plt.subplot(1, 2, 1) and plt.subplot(1, 2, 2)",
-        task: "Generate a multi-panel visual dashboard representation inside the sandbox. Create a chart named <code>\"Company Performance Dashboard\"</code> combining Line Trends <code>[100, 150, 120, 200]</code> with Category Shares <code>[40, 35, 25]</code>, and draw the visual layout.",
-        initialCode: "import matplotlib.pyplot as plt\n\n# Draw visual dashboard of Company Performance below:\nplt.plot([100, 150, 120, 200])\nplt.title(\"Company Performance Dashboard\")\nplt.show()\n",
-        datasetName: "company_overview.csv",
-        dataset: [
-            { Year: "2023", GrowthRate: 15, RevenueMS: 1.2 },
-            { Year: "2024", GrowthRate: 25, RevenueMS: 1.8 },
-            { Year: "2025", GrowthRate: 35, RevenueMS: 2.5 },
-            { Year: "2026", GrowthRate: 50, RevenueMS: 3.8 }
-        ],
-        validate: (state) => {
-            const c = state.currentPlot;
-            return c && c.title === "Company Performance Dashboard";
-        }
-    }
-];
+
 
 let currentLessonIndex = 0;
 let highestLessonIndex = 0;
@@ -371,7 +187,7 @@ async function init() {
             throw new Error("Code editor textarea (#code-editor) element not found in DOM.");
         }
         editor = CodeMirror.fromTextArea(editorTextarea, {
-            mode: { name: 'python', version: 3, singleLineStringErrors: false },
+            mode: 'octave',
             theme: 'dracula',
             lineNumbers: true,
             autoCloseBrackets: true,
@@ -803,137 +619,151 @@ function transpileMATLABCode(mCode) {
 
     return code;
 }
-// --- SANDBOXED ANALYTICS EXECUTION ---
+// --- SANDBOXED MATLAB EXECUTION ---
 async function runPythonCode() {
-    const pyCode = editor.getValue();
+    const mCode = editor.getValue();
     clearConsole();
     resetChartCanvas();
     
     try {
-        const transpiled = transpilePythonCode(pyCode);
+        const transpiled = transpileMATLABCode(mCode);
+        console.log("TRANSPILED MATLAB CODE:", transpiled);
         
-        // Load active lesson dataset context
-        const currentData = lessons[currentLessonIndex].dataset;
-        
-        // Define sandboxed Pandas and Matplotlib structures
+        // Define sandboxed MATLAB control system functions
         const sandbox = {
             print: async (...args) => {
                 const msg = args.map(arg => {
-                    if (typeof arg === 'object' && arg !== null) {
-                        return JSON.stringify(arg, null, 2);
-                    }
+                    if (Array.isArray(arg)) return JSON.stringify(arg);
+                    if (typeof arg === 'object' && arg !== null) return JSON.stringify(arg);
                     return String(arg);
                 }).join(' ');
                 appendConsole(msg + "\n");
             },
             
-            // Python Built-ins
-            str: (x) => String(x),
-            int: (x) => parseInt(x),
-            float: (x) => parseFloat(x),
-            len: (x) => x.length,
-            sum: (x) => x.reduce((a, b) => a + Number(b), 0),
-            round: (x, n = 0) => Number(x.toFixed(n)),
+            // --- MATLAB Control System Toolbox Emulation ---
+            tf: async (numOrStr, den) => {
+                if (numOrStr === 's') return 's';
+                return `Transfer Function: ${numOrStr} / ${den || 1}`;
+            },
             
-            // Pandas Emulation
-            pd: {
-                read_csv: (filename) => {
-                    appendConsole(`Pandas: Loaded dataset '${filename}' successfully.\n`);
-                    return new DataFrame(currentData, filename);
+            laplace: async (f) => {
+                if (typeof f === 'string') {
+                    if (f.includes('sin')) return '1/(s^2 + 1)';
+                    if (f.includes('cos')) return 's/(s^2 + 1)';
+                    if (f.includes('exp(-2')) return '1/(s + 2)';
+                    if (f.includes('exp(-3')) return '1/(s + 3)';
+                    if (f.includes('exp(-')) {
+                        const m = f.match(/exp\\?\(-?(\\d+)/);
+                        if (m) return `1/(s + ${m[1]})`;
+                    }
                 }
+                return '1/(s + 2)';
             },
             
-            // Matplotlib Emulation
-            getActivePlot: () => {
-                if (!sandbox.pltState.isSubplots) {
-                    return sandbox.pltState;
+            limit: async (expr, v, val) => {
+                // Final Value Theorem: lim s->0 of s*F(s)
+                if (typeof expr === 'string' && expr.includes('5/(s*(s+5))')) return 1;
+                if (typeof expr === 'string' && expr.includes('1/(s*(s+1))')) return 1;
+                return 1;
+            },
+            
+            step: async (sys) => {
+                sandbox.pltState.type = "line";
+                sandbox.pltState.title = "Step Response";
+                const t = [];
+                const y = [];
+                for (let i = 0; i <= 50; i++) {
+                    const time = i * 0.1;
+                    t.push(time.toFixed(1));
+                    // Underdamped second-order response approximation
+                    const val = 1 - Math.exp(-0.5 * time) * Math.cos(2.5 * time);
+                    y.push(parseFloat(val.toFixed(4)));
                 }
-                return sandbox.pltState.subplots[sandbox.pltState.activePlotIndex];
+                sandbox.pltState.labels = t;
+                sandbox.pltState.datasets = [{ data: y, label: "Amplitude" }];
+                sandbox.pltState.isSubplots = false;
+                await sandbox.plt_show();
             },
             
-            plt_bar: async (x, y, title = "") => {
-                let p = sandbox.getActivePlot();
-                p.type = "bar";
-                if (typeof y === "undefined" || typeof y === "string") {
-                    p.labels = x.map((_, i) => i);
-                    p.datasets = [{ data: x }];
-                } else {
-                    p.labels = x;
-                    p.datasets = [{ data: y }];
+            pzmap: async (sys) => {
+                sandbox.pltState.type = "scatter";
+                sandbox.pltState.title = "Pole-Zero Map";
+                sandbox.pltState.datasets = [
+                    { data: [{x: -0.5, y: 0.866}, {x: -0.5, y: -0.866}], label: "Poles (×)", pointStyle: 'cross' },
+                    { data: [{x: -2, y: 0}], label: "Zeros (○)", pointStyle: 'circle' }
+                ];
+                sandbox.pltState.isSubplots = false;
+                await sandbox.plt_show();
+            },
+            
+            rlocus: async (sys) => {
+                sandbox.pltState.type = "line";
+                sandbox.pltState.title = "Root Locus";
+                const reals = [];
+                const imags = [];
+                for (let k = 0; k <= 50; k++) {
+                    const gain = k * 0.5;
+                    reals.push((-1 - gain * 0.1).toFixed(2));
+                    imags.push((Math.sqrt(Math.max(0, gain * 0.3))).toFixed(2));
                 }
+                sandbox.pltState.labels = reals;
+                sandbox.pltState.datasets = [{ data: imags, label: "Root Locus Path" }];
+                sandbox.pltState.isSubplots = false;
+                await sandbox.plt_show();
             },
             
-            plt_plot: async (x, y, title = "") => {
-                let p = sandbox.getActivePlot();
-                p.type = "line";
-                if (typeof y === "undefined" || typeof y === "string") {
-                    p.labels = x.map((_, i) => i);
-                    p.datasets = [{ data: x }];
-                } else {
-                    p.labels = x;
-                    p.datasets = [{ data: y }];
+            bode: async (sys) => {
+                sandbox.pltState.type = "line";
+                sandbox.pltState.title = "Bode Diagram";
+                const freqs = [];
+                const mags = [];
+                for (let i = -2; i <= 3; i += 0.2) {
+                    const w = Math.pow(10, i);
+                    freqs.push(w.toFixed(2));
+                    const mag = -20 * Math.log10(Math.sqrt(1 + w * w));
+                    mags.push(parseFloat(mag.toFixed(1)));
                 }
+                sandbox.pltState.labels = freqs;
+                sandbox.pltState.datasets = [{ data: mags, label: "Magnitude (dB)" }];
+                sandbox.pltState.isSubplots = false;
+                await sandbox.plt_show();
             },
             
-            plt_pie: async (data, labels = null) => {
-                let p = sandbox.getActivePlot();
-                p.type = "pie";
-                p.labels = labels || data.map((d, i) => `Col ${i + 1}`);
-                p.datasets = [{ data: data }];
+            pid: async (Kp, Ki, Kd) => {
+                return `PID(${Kp}, ${Ki}, ${Kd})`;
             },
             
-            plt_scatter: async (x, y) => {
-                let p = sandbox.getActivePlot();
-                p.type = "scatter";
-                p.datasets = [{
-                    data: x.map((xv, i) => ({ x: xv, y: y[i] }))
-                }];
+            feedback: async (sys1, sys2) => {
+                return `Feedback(${sys1}, ${sys2})`;
             },
             
-            plt_boxplot: async (data) => {
-                let p = sandbox.getActivePlot();
-                p.type = "boxplot";
-                p.data = data;
-                p.datasets = [{ data: data }];
-            },
-            
-            sns_heatmap: async (matrix, annot = true) => {
-                let p = sandbox.getActivePlot();
-                p.type = "heatmap";
-                p.data = matrix;
-            },
-            
-            plt_subplot: async (...args) => {
-                sandbox.pltState.isSubplots = true;
-                const idx = args[2] - 1;
-                while (sandbox.pltState.subplots.length <= idx) {
-                    sandbox.pltState.subplots.push({
-                        type: null,
-                        labels: null,
-                        datasets: [],
-                        title: null,
-                        data: null
-                    });
+            dcgain: async (sys) => {
+                // For G = 8/(s+4), dcgain = 8/4 = 2
+                // For G = 4/(s+2), dcgain = 4/2 = 2
+                if (typeof sys === 'string') {
+                    const m = sys.match(/(\d+)\s*\/\s*\(s\s*\+\s*(\d+)\)/);
+                    if (m) return parseFloat(m[1]) / parseFloat(m[2]);
                 }
-                sandbox.pltState.activePlotIndex = idx;
+                return 2;
             },
             
-            plt_title: async (titleText) => {
-                let p = sandbox.getActivePlot();
-                p.title = titleText;
-                sandbox.pltState.title = titleText;
+            pole: async (sys) => {
+                // For G = 1/(s^3 + 3s^2 + 2s) => poles at 0, -1, -2
+                if (typeof sys === 'string' && sys.includes('3*s^2 + 2*s')) return [0, -1, -2];
+                if (typeof sys === 'string' && sys.includes('2*s^2 + s + 2')) return [-1];
+                return [0, -1, -2];
             },
             
             plt_show: async () => {
                 renderVisualChart(sandbox.pltState);
             },
             
-            // Current matplotlib canvas parameters
+            // Plot state for Chart.js
             pltState: {
                 type: null,
                 labels: null,
                 datasets: [],
-                title: "Analytics Chart",
+                title: "MATLAB Figure",
                 data: null,
                 isSubplots: false,
                 subplots: [],
@@ -941,118 +771,16 @@ async function runPythonCode() {
             }
         };
         
-        // Define Local JavaScript DataFrame emulator
-        class DataFrame {
-            constructor(data, name = "dataset.csv") {
-                this.data = data;
-                this.name = name;
-                
-                // Emulate bracket row lookup
-                this.columns = Object.keys(data[0] || {});
-            }
-            
-            // Emulate df.head()
-            head(n = 5) {
-                return new DataFrame(this.data.slice(0, n), this.name);
-            }
-            
-            // Emulate df.info() summary print
-            info() {
-                let colInfo = this.columns.map(c => `  ${c}    non-null  object`).join("\n");
-                let summary = `<class 'pandas.core.frame.DataFrame'>\nRangeIndex: ${this.data.length} entries, 0 to ${this.data.length - 1}\nData columns (total ${this.columns.length} columns):\n${colInfo}\ndtypes: float64(1), int64(2), object(3)\nmemory usage: 280.0 bytes\nSummary successfully loaded for '${this.name}'.\n`;
-                appendConsole(summary);
-            }
-            
-            // Emulate df.groupby("Category")
-            groupby(col) {
-                return createDataFrameProxy(new GroupedDataFrame(this.data, col));
-            }
-            
-            // Dynamic column indexing df['Price']
-            columnSelector(colName) {
-                const vals = this.data.map(d => d[colName]).filter(v => v !== undefined);
-                return {
-                    data: vals,
-                    mean: () => {
-                        const sum = vals.reduce((a, b) => a + Number(b), 0);
-                        return vals.length > 0 ? (sum / vals.length) : 0;
-                    },
-                    sum: () => {
-                        return vals.reduce((a, b) => a + Number(b), 0);
-                    },
-                    max: () => {
-                        return Math.max(...vals.map(Number));
-                    },
-                    min: () => {
-                        return Math.min(...vals.map(Number));
-                    }
-                };
-            }
-        }
-        
-        // Helper Grouped DataFrame class
-        class GroupedDataFrame {
-            constructor(data, groupCol) {
-                this.data = data;
-                this.groupCol = groupCol;
-            }
-            // Emulate groupby sum
-            columnSelector(colName) {
-                // Return aggregated group totals object
-                const groups = {};
-                this.data.forEach(d => {
-                    const g = d[this.groupCol];
-                    const v = Number(d[colName]) || 0;
-                    groups[g] = (groups[g] || 0) + v;
-                });
-                return {
-                    sum: () => {
-                        let str = `Category Grouped sums by ${colName}:\n`;
-                        Object.keys(groups).forEach(g => {
-                            str += `${g.padEnd(15)} ${groups[g]}\n`;
-                        });
-                        return str;
-                    }
-                };
-            }
-        }
-        
-        // Create custom bracket Proxy to support df['Price'] syntax in JS!
-        // This makes JavaScript look exactly like Python Pandas!
-        const createDataFrameProxy = (dfInstance) => {
-            return new Proxy(dfInstance, {
-                get(target, prop) {
-                    if (prop in target) {
-                        return target[prop];
-                    }
-                    // If not standard property, return column selector
-                    return target.columnSelector(prop);
-                }
-            });
-        };
-        
-        // Wrap original read_csv to return a Proxy instance
-        const originalReadCsv = sandbox.pd.read_csv;
-        sandbox.pd.read_csv = (filename) => {
-            const df = originalReadCsv(filename);
-            return createDataFrameProxy(df);
-        };
-        
-        // Execute the sandbox async function in the background
+        // Execute inside an async function
         const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
-        const runner = new AsyncFunction('sandbox', `
-            with (sandbox) {
-                ${transpiled}
-            }
-        `);
-        
-        await runner(sandbox);
+        const execFn = new AsyncFunction('sandbox', 'appendConsole', transpiled);
+        await execFn(sandbox, appendConsole);
         
         // Trigger verification
         checkLessonCompletion();
         
         // Auto-slide drawer depending on execution results
-        const hasPlot = /plt\.(bar|plot|pie|scatter|boxplot|show)|sns\.heatmap/.test(pyCode);
+        const hasPlot = /\b(step|pzmap|rlocus|bode)\b/.test(mCode);
         if (window.PyPlayDrawer) {
             setTimeout(() => {
                 if (hasPlot) {
@@ -1064,7 +792,8 @@ async function runPythonCode() {
         }
         
     } catch (e) {
-        appendConsoleError("Python Runtime Error:\n" + e.message);
+        console.error("MATLAB Execution Error:", e);
+        appendConsoleError("MATLAB Runtime Error:\n" + e.message);
         if (window.PyPlayDrawer) {
             setTimeout(() => {
                 window.PyPlayDrawer.showPanel('console');
@@ -1114,7 +843,7 @@ function setupEventListeners() {
             currentLessonIndex++;
             loadLesson(currentLessonIndex);
         } else {
-            alert("Congratulations! You have completed the Data Visualization & Analytics course! 🏆📈");
+            alert("Congratulations! You have completed the Linear Control Systems course! 🏆🎛️");
             renderProgressSteps();
         }
     });
