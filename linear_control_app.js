@@ -501,20 +501,21 @@ function renderVisualChart(plotData) {
                 datasets: pData.datasets.map(ds => ({
                     label: ds.label || 'Data Variable',
                     data: ds.data,
-                    backgroundColor: pData.type === 'line' ? 'rgba(59, 130, 246, 0.15)' : [
+                    backgroundColor: ds.backgroundColor || (pData.type === 'line' ? 'rgba(59, 130, 246, 0.15)' : [
                         'rgba(59, 130, 246, 0.75)',
                         'rgba(16, 185, 129, 0.75)',
                         'rgba(236, 72, 153, 0.75)',
                         'rgba(245, 158, 11, 0.75)',
                         'rgba(139, 92, 246, 0.75)',
                         'rgba(239, 68, 68, 0.75)'
-                    ],
-                    borderColor: '#3b82f6',
-                    borderWidth: pData.type === 'line' ? 3 : 1,
+                    ]),
+                    borderColor: ds.borderColor || '#3b82f6',
+                    borderWidth: ds.borderWidth || (pData.type === 'line' ? 3 : 1),
                     tension: 0.4,
-                    pointBackgroundColor: '#fff',
-                    pointBorderColor: '#3b82f6',
-                    pointRadius: (pData.type === 'line' || pData.type === 'scatter') ? 5 : 0
+                    pointBackgroundColor: ds.pointBackgroundColor || '#fff',
+                    pointBorderColor: ds.pointBorderColor || '#3b82f6',
+                    pointRadius: ds.pointRadius !== undefined ? ds.pointRadius : ((pData.type === 'line' || pData.type === 'scatter') ? 5 : 0),
+                    pointStyle: ds.pointStyle || 'circle'
                 }))
             },
             options: {
@@ -878,8 +879,8 @@ async function runPythonCode() {
                 }
                 
                 sandbox.pltState.datasets = [
-                    { data: poles, label: "Poles (×)", pointStyle: 'cross' },
-                    { data: zeros, label: "Zeros (○)", pointStyle: 'circle' }
+                    { data: poles, label: "Poles (×)", pointStyle: 'crossRot', pointRadius: 8, pointBorderColor: '#ef4444', pointBackgroundColor: 'transparent', borderColor: 'transparent', backgroundColor: 'transparent' },
+                    { data: zeros, label: "Zeros (○)", pointStyle: 'circle', pointRadius: 8, pointBorderColor: '#10b981', pointBackgroundColor: 'transparent', borderColor: 'transparent', backgroundColor: 'transparent' }
                 ];
                 sandbox.pltState.isSubplots = false;
                 await sandbox.plt_show();
