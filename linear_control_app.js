@@ -531,6 +531,30 @@ function renderVisualChart(plotData) {
                     legend: {
                         display: pData.type === 'pie' || pData.type === 'doughnut',
                         labels: { color: '#94a3b8', font: { family: 'Inter' } }
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                let label = context.dataset.label || '';
+                                if (label) {
+                                    label += ': ';
+                                }
+                                if (context.parsed.y !== null) {
+                                    if (context.raw && context.raw.x !== undefined && context.raw.y !== undefined) {
+                                        let xVal = Math.round(context.raw.x * 1000) / 1000;
+                                        let yVal = Math.round(context.raw.y * 1000) / 1000;
+                                        label += `(${xVal}, ${yVal})`;
+                                        if (context.raw.k !== undefined) {
+                                            let kVal = Math.round(context.raw.k * 1000) / 1000;
+                                            label += ` | K: ${kVal}`;
+                                        }
+                                    } else {
+                                        label += context.parsed.y;
+                                    }
+                                }
+                                return label;
+                            }
+                        }
                     }
                 },
                 scales: pData.type === 'pie' || pData.type === 'doughnut' ? {} : {
@@ -942,7 +966,7 @@ async function runPythonCode() {
                                 r = parseFloat(rStr);
                             }
                         }
-                        scatterPoints.push({x: r, y: i});
+                        scatterPoints.push({x: r, y: i, k: K});
                     }
                 }
                 
