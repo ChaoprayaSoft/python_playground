@@ -994,34 +994,85 @@ async function runPythonCode() {
             },
             
             bode: async (sys) => {
-                sandbox.pltState.type = "line";
                 sandbox.pltState.title = "Bode Diagram";
-                let freqs = [];
-                let mags = [];
                 let sysStr = (typeof sys === 'string') ? sys : sandbox._rawCode;
-                let params = sandbox.parse2ndOrder(sysStr);
+                sysStr = sysStr.replace(/Transfer Function:\s*/, '');
                 
-                if (params) {
-                    let {K, A, B} = params;
-                    for (let i = -1; i <= 3; i += 0.1) {
-                        let w = Math.pow(10, i);
-                        freqs.push(w.toFixed(2));
-                        let realPart = B - w*w;
-                        let imagPart = A * w;
-                        let mag = K / Math.sqrt(realPart*realPart + imagPart*imagPart);
-                        mags.push(parseFloat((20 * Math.log10(mag)).toFixed(2)));
-                    }
+                let numStr = "1";
+                let denStr = sysStr;
+                let splitMatch = sysStr.match(/(.*?)\/\s*\((.*?)\)/);
+                if (splitMatch) {
+                    numStr = splitMatch[1];
+                    denStr = splitMatch[2];
                 } else {
-                    for (let i = -2; i <= 3; i += 0.2) {
-                        let w = Math.pow(10, i);
-                        freqs.push(w.toFixed(2));
-                        let mag = -20 * Math.log10(Math.sqrt(1 + w * w));
-                        mags.push(parseFloat(mag.toFixed(1)));
+                    let simpleSplit = sysStr.split('/');
+                    if (simpleSplit.length === 2) {
+                        numStr = simpleSplit[0];
+                        denStr = simpleSplit[1];
                     }
                 }
-                sandbox.pltState.labels = freqs;
-                sandbox.pltState.datasets = [{ data: mags, label: "Magnitude (dB)" }];
-                sandbox.pltState.isSubplots = false;
+                
+                let numCoeffs = sandbox.parsePoly(numStr);
+                let denCoeffs = sandbox.parsePoly(denStr);
+                
+                let evalFreq = (coeffs, w) => {
+                    let r = 0, i = 0;
+                    for (let k = 0; k < coeffs.length; k++) {
+                        let mag = coeffs[k] * Math.pow(w, k);
+                        let cycle = k % 4;
+                        if (cycle === 0) r += mag;
+                        else if (cycle === 1) i += mag;
+                        else if (cycle === 2) r -= mag;
+                        else if (cycle === 3) i -= mag;
+                    }
+                    return {r, i};
+                };
+                
+                let freqs = [];
+                let mags = [];
+                let phases = [];
+                
+                for (let exp = -1; exp <= 3; exp += 0.05) {
+                    let w = Math.pow(10, exp);
+                    freqs.push(w < 1 ? w.toFixed(2) : (w < 10 ? w.toFixed(1) : Math.round(w)));
+                    
+                    let numEval = evalFreq(numCoeffs, w);
+                    let denEval = evalFreq(denCoeffs, w);
+                    
+                    let numMag = Math.sqrt(numEval.r*numEval.r + numEval.i*numEval.i);
+                    let denMag = Math.sqrt(denEval.r*denEval.r + denEval.i*denEval.i);
+                    let mag = (numMag / denMag) || 1e-10;
+                    
+                    mags.push(parseFloat((20 * Math.log10(mag)).toFixed(2)));
+                    
+                    let numPhase = Math.atan2(numEval.i, numEval.r);
+                    let denPhase = Math.atan2(denEval.i, denEval.r);
+                    let phase = (numPhase - denPhase) * (180 / Math.PI);
+                    
+                    if (phases.length > 0) {
+                        let prev = phases[phases.length - 1];
+                        while (phase - prev > 180) phase -= 360;
+                        while (phase - prev < -180) phase += 360;
+                    }
+                    phases.push(parseFloat(phase.toFixed(2)));
+                }
+                
+                sandbox.pltState.isSubplots = true;
+                sandbox.pltState.subplots = [
+                    {
+                        type: 'line',
+                        title: 'Magnitude (dB)',
+                        labels: freqs,
+                        datasets: [{ data: mags, label: 'Magnitude (dB)' }]
+                    },
+                    {
+                        type: 'line',
+                        title: 'Phase (deg)',
+                        labels: freqs,
+                        datasets: [{ data: phases, label: 'Phase (deg)', borderColor: '#10b981', pointBorderColor: '#10b981' }]
+                    }
+                ];
+                
                 await sandbox.plt_show();
             },
             
